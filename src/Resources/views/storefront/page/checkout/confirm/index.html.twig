@@ -1,9 +1,9 @@
 {% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
 
 {% block page_checkout_aside_actions %}
-    {% set bp = page.getExtension('bonusPoints') %}
+    {% set bp = page.getExtension('bonus') %}
     {% if bp %}
-        {% sw_include '@BonusPoints/storefront/component/bonus-points/box.html.twig' with { bpMode: 'confirm', bpRedirect: 'frontend.checkout.confirm.page' } %}
+        {% sw_include '@Bonus/storefront/component/bonus/box.html.twig' with { bpMode: 'confirm', bpRedirect: 'frontend.checkout.confirm.page' } %}
     {% endif %}
 
     {{ parent() }}

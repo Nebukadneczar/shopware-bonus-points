@@ -18,10 +18,10 @@ Loyalty points for customers with an account: points for orders, levels with mul
 - Admin-Modul „Bonuspunkte“ (Marketing): Kennzahlen, Kundenliste, Buchen, Sperren, Nachbuchen, CSV-Export und alle Einstellungen, auch die Farben
 
 ## Installation
-1. ZIP aus dem Release herunterladen (Ordner `BonusPoints` im ZIP), im Admin unter Erweiterungen → Meine Erweiterungen → „Erweiterung hochladen“, installieren und aktivieren. Bei einem Update zusätzlich „Aktualisieren“.
+1. ZIP aus dem Release herunterladen (Ordner `Bonus` im ZIP), im Admin unter Erweiterungen → Meine Erweiterungen → „Erweiterung hochladen“, installieren und aktivieren. Bei einem Update zusätzlich „Aktualisieren“.
 2. Im Shop-Verzeichnis: `bin/console assets:install` und `bin/console cache:clear`.
 3. Einstellungen im Admin unter Marketing → Bonuspunkte → Reiter „Einstellungen“ (oder in der Plugin-Konfiguration).
-4. Prüfen: `bin/console lint:twig custom/plugins/BonusPoints/src/Resources/views` und `bin/console lint:container`.
+4. Prüfen: `bin/console lint:twig custom/plugins/Bonus/src/Resources/views` und `bin/console lint:container`.
 
 ## Wichtige Regeln
 - Punkte entstehen, wenn die **Zahlung auf „Bezahlt“** wechselt. Basis ist der Warenwert ohne Versand und nach Rabatten.
@@ -32,14 +32,14 @@ Loyalty points for customers with an account: points for orders, levels with mul
 
 ## Befehle
 ```
-bin/console bonus-points:konto kunde@example.de
-bin/console bonus-points:buchen kunde@example.de 100 "Grund"
-bin/console bonus-points:sperre kunde@example.de [--aufheben]
-bin/console bonus-points:abgleich --seit=2026-01-01 [--anwenden]
+bin/console bonus:konto kunde@example.de
+bin/console bonus:buchen kunde@example.de 100 "Grund"
+bin/console bonus:sperre kunde@example.de [--aufheben]
+bin/console bonus:abgleich --seit=2026-01-01 [--anwenden]
 ```
 
 ## Anpassen
-- Farben: im Admin unter Einstellungen → „Darstellung“ (Hauptfarbe, Akzentfarbe). Texte stehen in den Twig-Vorlagen (`src/Resources/views`) und im Admin-Skript (`src/Resources/public/administration/assets/bonus-points.js`, reines JavaScript ohne Build-Schritt).
+- Farben: im Admin unter Einstellungen → „Darstellung“ (Hauptfarbe, Akzentfarbe). Texte stehen in den Twig-Vorlagen (`src/Resources/views`) und im Admin-Skript (`src/Resources/public/administration/assets/bonus.js`, reines JavaScript ohne Build-Schritt).
 
 ## Mitmachen
 Fehler und Wünsche gern als Issue, Verbesserungen als Pull Request. Bitte immer mit Shopware-Version und, wenn möglich, Log-Ausschnitt.

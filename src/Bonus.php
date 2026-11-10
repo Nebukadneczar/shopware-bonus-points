@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints;
+namespace Bonus;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 
-class BonusPoints extends Plugin
+class Bonus extends Plugin
 {
     public function uninstall(UninstallContext $uninstallContext): void
     {
@@ -18,7 +18,7 @@ class BonusPoints extends Plugin
         }
 
         $connection = $this->container->get(Connection::class);
-        foreach (['bonus_points_referral', 'bonus_points_member', 'bonus_points_entry'] as $table) {
+        foreach (['bonus_referral', 'bonus_member', 'bonus_entry'] as $table) {
             $connection->executeStatement('DROP TABLE IF EXISTS `' . $table . '`');
         }
     }

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Subscriber;
+namespace Bonus\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
-use BonusPoints\Service\ReferralService;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
+use Bonus\Service\ReferralService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent;
@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class CustomerSubscriber implements EventSubscriberInterface
 {
-    public const SESSION_REF = 'bonus_points_ref';
+    public const SESSION_REF = 'bonus_ref';
 
     public function __construct(
         private readonly BonusService $bonus,
@@ -77,14 +77,14 @@ class CustomerSubscriber implements EventSubscriberInterface
             $id = $customer->getId();
             $request = $this->requestStack->getCurrentRequest();
 
-            if ($request !== null && $request->request->get('bonusPointsJoin')) {
+            if ($request !== null && $request->request->get('bonusJoin')) {
                 $this->members->join($id, 'register');
             }
 
             // Empfehlung: Code aus dem Formular oder aus dem Empfehlungslink
             $code = '';
             if ($request !== null) {
-                $code = (string) $request->request->get('bonusPointsRef', '');
+                $code = (string) $request->request->get('bonusRef', '');
                 if ($code === '' && $request->hasSession()) {
                     $code = (string) $request->getSession()->get(self::SESSION_REF, '');
                 }
@@ -169,7 +169,7 @@ class CustomerSubscriber implements EventSubscriberInterface
         try {
             $fn();
         } catch (\Throwable $e) {
-            $this->logger->error('BonusPoints (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->error('Bonus (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

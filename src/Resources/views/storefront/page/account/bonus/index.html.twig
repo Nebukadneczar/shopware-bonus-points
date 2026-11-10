@@ -1,11 +1,11 @@
 {% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
 
-{% set activeRoute = 'frontend.account.bonus_points.page' %}
+{% set activeRoute = 'frontend.account.bonus.page' %}
 
 {% block page_account_main_content %}
-    {% set bpPrimary = config('BonusPoints.config.colorPrimary') %}
+    {% set bpPrimary = config('Bonus.config.colorPrimary') %}
     {% if not (bpPrimary matches '/^#[0-9a-fA-F]{6}$/') %}{% set bpPrimary = '#1d4ed8' %}{% endif %}
-    {% set bpAccent = config('BonusPoints.config.colorAccent') %}
+    {% set bpAccent = config('Bonus.config.colorAccent') %}
     {% if not (bpAccent matches '/^#[0-9a-fA-F]{6}$/') %}{% set bpAccent = '#16803c' %}{% endif %}
     <div class="bp" style="--bp-primary: {{ bpPrimary }}; --bp-accent: {{ bpAccent }}">
         <h1 class="bp__h1">Meine Punkte</h1>
@@ -17,8 +17,8 @@
         {% elseif canJoin %}
             <div class="bp__card">
                 <p class="bp__lvltext"><strong>Sammle Punkte bei jeder Bestellung.</strong> Mit einem Klick bist du dabei. Du erhältst {{ pointsPerEuro|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} {{ pointsPerEuro == 1 ? 'Punkt' : 'Punkte' }} je 1 € Warenwert, jeder Punkt ist {{ (pointValue * 100)|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Cent wert.</p>
-                <form action="{{ path('frontend.bonus_points.join') }}" method="post">
-                    <input type="hidden" name="redirectTo" value="frontend.account.bonus_points.page">
+                <form action="{{ path('frontend.bonus.join') }}" method="post">
+                    <input type="hidden" name="redirectTo" value="frontend.account.bonus.page">
                     <button type="submit" class="btn btn-primary">Am Bonusprogramm teilnehmen</button>
                 </form>
             </div>

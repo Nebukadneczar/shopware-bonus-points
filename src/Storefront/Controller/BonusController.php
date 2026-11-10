@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Storefront\Controller;
+namespace Bonus\Storefront\Controller;
 
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
-use BonusPoints\Service\ReferralService;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
+use Bonus\Service\ReferralService;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -30,7 +30,7 @@ class BonusController extends StorefrontController
 
     #[Route(
         path: '/account/bonus',
-        name: 'frontend.account.bonus_points.page',
+        name: 'frontend.account.bonus.page',
         options: ['seo' => false],
         defaults: [
             PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
@@ -75,7 +75,7 @@ class BonusController extends StorefrontController
             }
         }
 
-        return $this->renderStorefront('@BonusPoints/storefront/page/account/bonus/index.html.twig', [
+        return $this->renderStorefront('@Bonus/storefront/page/account/bonus/index.html.twig', [
             'page' => $page,
             'participant' => $participant,
             'canJoin' => !$participant && $this->members->enrollment() === 'optin' && $state['eligible'] && !$state['member'],

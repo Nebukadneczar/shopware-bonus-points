@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Command;
+namespace Bonus\Command;
 
-use BonusPoints\Service\AdminService;
+use Bonus\Service\AdminService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'bonus-points:abgleich', description: 'Schreibt Punkte für bezahlte Bestellungen nach, die noch keine Buchung haben (Standard: nur Vorschau)')]
+#[AsCommand(name: 'bonus:abgleich', description: 'Schreibt Punkte für bezahlte Bestellungen nach, die noch keine Buchung haben (Standard: nur Vorschau)')]
 class AbgleichCommand extends Command
 {
     public function __construct(private readonly AdminService $admin)
@@ -34,7 +34,7 @@ class AbgleichCommand extends Command
         }
         $apply = (bool) $input->getOption('anwenden');
         $res = $this->admin->importOrders($seit, $apply);
-        $output->writeln(sprintf('%d bezahlte Bestellung(en) ohne Punktebuchung seit %s.%s', $res['count'], $seit, $apply ? '' : ' (Vorschau, nichts gebucht)'));
+        $output->writeln(sprintf('Seit %s: %s.%s', $seit, $res['summary'], $apply ? '' : ' (Vorschau, nichts gebucht)'));
         foreach ($res['lines'] as $line) {
             $output->writeln('  ' . $line);
         }

@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Service;
+namespace Bonus\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
@@ -13,7 +13,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class GiftService
 {
-    private const CFG = 'BonusPoints.config.';
+    private const CFG = 'Bonus.config.';
 
     /** @var array<string,bool> */
     private array $exists = [];

@@ -1,5 +1,5 @@
 {
-  "name": "macdata/bonus-points",
+  "name": "macdata/bonus",
   "description": "Bonus-System für Shopware 6.7: Treuepunkte, Stufen, Einlösen im Warenkorb, Gratisprodukte, Empfehlungen und Verwaltung im Admin",
   "type": "shopware-platform-plugin",
   "version": "2.0.0",
@@ -8,7 +8,7 @@
     "shopware/storefront": "~6.7.0"
   },
   "extra": {
-    "shopware-plugin-class": "BonusPoints\\BonusPoints",
+    "shopware-plugin-class": "Bonus\\Bonus",
     "label": {
       "de-DE": "Bonus-System (Treuepunkte)",
       "en-GB": "Bonus System (Loyalty Points)"
@@ -21,7 +21,7 @@
   },
   "autoload": {
     "psr-4": {
-      "BonusPoints\\": "src/"
+      "Bonus\\": "src/"
     }
   },
   "authors": [

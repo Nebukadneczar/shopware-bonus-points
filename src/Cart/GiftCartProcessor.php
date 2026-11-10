@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Cart;
+namespace Bonus\Cart;
 
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\GiftService;
-use BonusPoints\Service\MemberService;
+use Bonus\Service\BonusService;
+use Bonus\Service\GiftService;
+use Bonus\Service\MemberService;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\CartProcessorInterface;
@@ -17,13 +17,13 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
 
 /**
  * Gratisprodukte als Position mit 0 €: „auto“ legt der Prozessor selbst in den Warenkorb,
- * bei „wahl“ entscheidet der Kunde (eine Position mit der Kennung bonus-points-gift-choice).
+ * bei „wahl“ entscheidet der Kunde (eine Position mit der Kennung bonus-gift-choice).
  * Es sind Positionen ohne Lagerbuchung; die Bestellung zeigt Artikelnummer und Bezeichnung zum Verpacken.
  */
 class GiftCartProcessor implements CartProcessorInterface
 {
-    public const TYPE = 'bonus_points_gift';
-    public const CHOICE_ID = 'bonus-points-gift-choice';
+    public const TYPE = 'bonus_gift';
+    public const CHOICE_ID = 'bonus-gift-choice';
 
     public function __construct(
         private readonly BonusService $bonus,
@@ -60,7 +60,7 @@ class GiftCartProcessor implements CartProcessorInterface
         // automatische Geschenke
         foreach ($eligible as $r) {
             if ($r['mode'] === 'auto') {
-                $toCalculate->add($this->build('bonus-points-gift-' . substr(md5($r['sku']), 0, 12), $r, false));
+                $toCalculate->add($this->build('bonus-gift-' . substr(md5($r['sku']), 0, 12), $r, false));
             }
         }
 

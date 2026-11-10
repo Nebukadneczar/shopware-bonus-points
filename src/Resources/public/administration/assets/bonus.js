@@ -3,7 +3,7 @@
     'use strict';
     if (!window.Shopware || !Shopware.Component || !Shopware.Module) { return; }
 
-    var BASE = '/_action/bonus-points';
+    var BASE = '/_action/bonus';
     var ABOUT_VERSION = '2.0.0';
 
     function http() { return Shopware.Application.getContainer('init').httpClient; }
@@ -163,7 +163,7 @@ var ABOUT_TPL = `
 </div>`;
 
     var TEMPLATE = `
-<sw-page class="bonus-points-index">
+<sw-page class="bonus-index">
   <template #smart-bar-header><h2>Bonuspunkte</h2></template>
   <template #smart-bar-actions>
     <button class="bpa-btn" type="button" @click="exportCsv">CSV-Export</button>
@@ -184,7 +184,7 @@ var ABOUT_TPL = `
         <div class="bpa-stat"><span>Kunden mit Punkten</span><strong>{{ fmt(stats.customers) }}</strong><small>{{ fmt(stats.referrals) }} Empfehlungen · {{ fmt(stats.blocked) }} gesperrt</small></div>
       </div>
 
-      <sw-card title="Kunden" position-identifier="bonus-points-list">
+      <sw-card title="Kunden" position-identifier="bonus-list">
         <div class="bpa-toolbar">
           <input class="bpa-input" type="search" v-model="search" @input="onSearch" placeholder="Suchen: Name, E-Mail oder Kundennummer">
           <select class="bpa-input bpa-select" v-model="filter" @change="load(1)" aria-label="Filter">
@@ -232,7 +232,7 @@ var ABOUT_TPL = `
         </div>
       </sw-card>
 
-      <sw-card title="Bestellungen nachbuchen" position-identifier="bonus-points-import">
+      <sw-card title="Bestellungen nachbuchen" position-identifier="bonus-import">
         <p class="bpa-hint">Findet bezahlte Bestellungen ohne Punktebuchung, zum Beispiel aus der Zeit vor der Aktivierung des Bonus-Systems, und bucht sie nach. Zuerst die Vorschau ansehen.</p>
         <div class="bpa-toolbar">
           <label>Bestellungen ab <input class="bpa-input bpa-date" type="date" v-model="imp.since"></label>
@@ -387,7 +387,7 @@ var ABOUT_TPL = `
 @media (max-width:700px){.bpa-row{flex-direction:column}.bpa-pts{flex:1}}
 `;
 
-    Shopware.Component.register('bonus-points-index', {
+    Shopware.Component.register('bonus-index', {
         template: TEMPLATE,
         mixins: [Shopware.Mixin.getByName('notification')],
         data: function () {
@@ -532,8 +532,8 @@ var ABOUT_TPL = `
                 if (!this.cfgLoaded) { this.loadSettings(); }
             },
             loadSettings: function () {
-                var me = this, P = 'BonusPoints.config.';
-                http().get('/_action/system-config', { headers: headers(), params: { domain: 'BonusPoints.config' } })
+                var me = this, P = 'Bonus.config.';
+                http().get('/_action/system-config', { headers: headers(), params: { domain: 'Bonus.config' } })
                     .then(function (r) {
                         var c = {}, k;
                         for (k in r.data) { if (k.indexOf(P) === 0) { c[k.slice(P.length)] = r.data[k]; } }
@@ -584,7 +584,7 @@ var ABOUT_TPL = `
             },
             clean: function (s) { return String(s || '').replace(/[;\r\n]/g, ' ').trim(); },
             saveSettings: function () {
-                var me = this, c = me.cfg, P = 'BonusPoints.config.';
+                var me = this, c = me.cfg, P = 'Bonus.config.';
                 function num(v, d) { var n = Number(v); return isFinite(n) && v !== '' && v !== null ? n : d; }
                 var levels = [];
                 if (c.levelModel !== 'off') {
@@ -654,8 +654,8 @@ var ABOUT_TPL = `
                 http().post(BASE + '/import', { since: me.imp.since, apply: apply }, { headers: headers() })
                     .then(function (r) {
                         var d = r.data;
-                        me.imp.previewed = !apply && d.count > 0;
-                        me.imp.result = d.count + ' Bestellung(en) gefunden' + (apply ? ', ' + d.booked + ' gebucht' : ' (Vorschau, noch nichts gebucht)') + '\n' + d.lines.join('\n');
+                        me.imp.previewed = !apply && d.bookable > 0;
+                        me.imp.result = d.summary + (apply ? '. Gebucht: ' + d.booked : ' (Vorschau, noch nichts gebucht)') + '\n\n' + d.lines.join('\n');
                         if (apply) { me.imp.previewed = false; me.load(1); }
                     })
                     .catch(function (e) { me.fail(e); });
@@ -663,26 +663,26 @@ var ABOUT_TPL = `
         }
     });
 
-    Shopware.Module.register('bonus-points', {
+    Shopware.Module.register('bonus', {
         type: 'plugin',
-        name: 'bonus-points',
+        name: 'bonus',
         title: 'Bonuspunkte',
         description: 'Treuepunkte, Level und Empfehlungen verwalten',
         color: '#16803c',
         icon: 'regular-star',
         routes: {
             index: {
-                component: 'bonus-points-index',
+                component: 'bonus-index',
                 path: 'index',
                 meta: { parentPath: 'sw.marketing.index' }
             }
         },
         navigation: [{
-            id: 'bonus-points',
+            id: 'bonus',
             label: 'Bonuspunkte',
             color: '#16803c',
             icon: 'regular-star',
-            path: 'bonus.points.index',
+            path: 'bonus.index',
             parent: 'sw-marketing',
             position: 100
         }]

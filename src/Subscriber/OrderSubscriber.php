@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Subscriber;
+namespace Bonus\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
-use BonusPoints\Service\ReferralService;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
+use Bonus\Service\ReferralService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Defaults;
@@ -50,7 +50,7 @@ class OrderSubscriber implements EventSubscriberInterface
 
             // Beitritt über die Checkbox an der Kasse
             $request = $this->requestStack->getCurrentRequest();
-            if ($request !== null && $request->request->get('bonusPointsJoin')) {
+            if ($request !== null && $request->request->get('bonusJoin')) {
                 $customerId = $order->getOrderCustomer()?->getCustomerId();
                 if ($customerId !== null && $this->bonus->isActive()) {
                     $this->members->join($customerId, 'checkout');
@@ -151,7 +151,7 @@ class OrderSubscriber implements EventSubscriberInterface
         try {
             $fn();
         } catch (\Throwable $e) {
-            $this->logger->error('BonusPoints (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->error('Bonus (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

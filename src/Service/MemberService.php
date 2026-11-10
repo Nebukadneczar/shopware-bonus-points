@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Service;
+namespace Bonus\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -11,7 +11,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class MemberService
 {
-    private const CFG = 'BonusPoints.config.';
+    private const CFG = 'Bonus.config.';
     private const CODE_CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
     /** @var array<string,bool> */
@@ -60,7 +60,7 @@ class MemberService
     {
         $row = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(c.customer_group_id)) AS g, c.guest, m.status
-             FROM customer c LEFT JOIN bonus_points_member m ON m.customer_id = c.id
+             FROM customer c LEFT JOIN bonus_member m ON m.customer_id = c.id
              WHERE c.id = :c',
             ['c' => Uuid::fromHexToBytes($customerId)]
         );
@@ -83,7 +83,7 @@ class MemberService
     public function join(string $customerId, string $source): void
     {
         $this->db->executeStatement(
-            'INSERT INTO bonus_points_member (customer_id, status, source, joined_at) VALUES (:c, \'active\', :s, :n)
+            'INSERT INTO bonus_member (customer_id, status, source, joined_at) VALUES (:c, \'active\', :s, :n)
              ON DUPLICATE KEY UPDATE status = IF(status = \'blocked\', \'blocked\', \'active\')',
             ['c' => Uuid::fromHexToBytes($customerId), 's' => $source, 'n' => $this->now()]
         );
@@ -93,7 +93,7 @@ class MemberService
     public function block(string $customerId): void
     {
         $this->db->executeStatement(
-            'INSERT INTO bonus_points_member (customer_id, status, source, joined_at) VALUES (:c, \'blocked\', \'admin\', :n)
+            'INSERT INTO bonus_member (customer_id, status, source, joined_at) VALUES (:c, \'blocked\', \'admin\', :n)
              ON DUPLICATE KEY UPDATE status = \'blocked\'',
             ['c' => Uuid::fromHexToBytes($customerId), 'n' => $this->now()]
         );
@@ -103,7 +103,7 @@ class MemberService
     public function unblock(string $customerId): void
     {
         $this->db->executeStatement(
-            'UPDATE bonus_points_member SET status = \'active\' WHERE customer_id = :c AND status = \'blocked\'',
+            'UPDATE bonus_member SET status = \'active\' WHERE customer_id = :c AND status = \'blocked\'',
             ['c' => Uuid::fromHexToBytes($customerId)]
         );
         unset($this->cache[$customerId]);
@@ -113,7 +113,7 @@ class MemberService
     public function referralCode(string $customerId): string
     {
         $bytes = Uuid::fromHexToBytes($customerId);
-        $code = $this->db->fetchOne('SELECT referral_code FROM bonus_points_member WHERE customer_id = :c', ['c' => $bytes]);
+        $code = $this->db->fetchOne('SELECT referral_code FROM bonus_member WHERE customer_id = :c', ['c' => $bytes]);
         if (\is_string($code) && $code !== '') {
             return $code;
         }
@@ -122,16 +122,16 @@ class MemberService
             for ($j = 0; $j < 8; ++$j) {
                 $candidate .= self::CODE_CHARS[random_int(0, \strlen(self::CODE_CHARS) - 1)];
             }
-            $taken = $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_member WHERE referral_code = :x', ['x' => $candidate]);
+            $taken = $this->db->fetchOne('SELECT COUNT(*) FROM bonus_member WHERE referral_code = :x', ['x' => $candidate]);
             if ((int) $taken > 0) {
                 continue;
             }
             $this->db->executeStatement(
-                'INSERT INTO bonus_points_member (customer_id, status, source, joined_at, referral_code) VALUES (:c, \'active\', \'code\', :n, :x)
+                'INSERT INTO bonus_member (customer_id, status, source, joined_at, referral_code) VALUES (:c, \'active\', \'code\', :n, :x)
                  ON DUPLICATE KEY UPDATE referral_code = COALESCE(referral_code, VALUES(referral_code))',
                 ['c' => $bytes, 'n' => $this->now(), 'x' => $candidate]
             );
-            $stored = $this->db->fetchOne('SELECT referral_code FROM bonus_points_member WHERE customer_id = :c', ['c' => $bytes]);
+            $stored = $this->db->fetchOne('SELECT referral_code FROM bonus_member WHERE customer_id = :c', ['c' => $bytes]);
 
             return (string) $stored;
         }
@@ -146,7 +146,7 @@ class MemberService
             return null;
         }
         $id = $this->db->fetchOne(
-            'SELECT LOWER(HEX(customer_id)) FROM bonus_points_member WHERE referral_code = :x AND status = \'active\'',
+            'SELECT LOWER(HEX(customer_id)) FROM bonus_member WHERE referral_code = :x AND status = \'active\'',
             ['x' => $code]
         );
 

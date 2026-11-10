@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Service;
+namespace Bonus\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
@@ -13,7 +13,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class BonusService
 {
-    public const CFG = 'BonusPoints.config.';
+    public const CFG = 'Bonus.config.';
 
     /** Buchungsarten, die Punkte ausgeben oder zurückgeben. Sie zählen nicht für den Status (das Level). */
     public const SPEND_TYPES = ['redeem', 'redeem_refund'];
@@ -217,7 +217,7 @@ class BonusService
                 COALESCE(SUM(CASE WHEN available_at <= :now1 THEN points ELSE 0 END), 0) AS available,
                 COALESCE(SUM(CASE WHEN available_at > :now2 THEN points ELSE 0 END), 0) AS pending,
                 COALESCE(SUM(CASE WHEN available_at <= :now3 AND type NOT IN (' . $spend . ')' . $since . ' THEN points ELSE 0 END), 0) AS status
-             FROM bonus_points_entry WHERE customer_id = :c',
+             FROM bonus_entry WHERE customer_id = :c',
             $params
         ) ?: ['available' => 0, 'pending' => 0, 'status' => 0];
 
@@ -238,7 +238,7 @@ class BonusService
     {
         $rows = $this->db->fetchAllAssociative(
             'SELECT type, points, order_number, LOWER(HEX(order_id)) AS order_id, reason, available_at, created_at
-             FROM bonus_points_entry WHERE customer_id = :c
+             FROM bonus_entry WHERE customer_id = :c
              ORDER BY created_at DESC, available_at DESC LIMIT ' . max(1, min(500, $limit)),
             ['c' => Uuid::fromHexToBytes($customerId)]
         );
@@ -298,6 +298,54 @@ class BonusService
     }
 
     /**
+     * Prüft, ob und wie viele Punkte eine bezahlte Bestellung bringt, ohne zu buchen.
+     *
+     * @return array{ok:bool,points:int,message:string,customerId:?string,orderNumber:string,reason:string,mult:float}
+     */
+    public function planAward(string $orderId): array
+    {
+        $o = $this->orderBase($orderId);
+        $fail = static fn (string $m, ?string $cid = null, string $no = ''): array => [
+            'ok' => false, 'points' => 0, 'message' => $m, 'customerId' => $cid, 'orderNumber' => $no, 'reason' => '', 'mult' => 1.0,
+        ];
+        if ($o === null) {
+            return $fail('Bestellung nicht gefunden');
+        }
+        if ($o['customerId'] === null || $o['guest']) {
+            return $fail('Gastbestellung (kein Kundenkonto)', null, $o['orderNumber']);
+        }
+        if (!$this->members->isParticipant($o['customerId'])) {
+            return $fail('keine Teilnahme (Kundengruppe, Beitritt oder gesperrt)', $o['customerId'], $o['orderNumber']);
+        }
+        if ($o['euro'] <= 0) {
+            return $fail('kein Warenwert', $o['customerId'], $o['orderNumber']);
+        }
+
+        $acc = $this->account($o['customerId']);
+        $mult = $acc['level']['mult'];
+        $points = (int) floor($o['euro'] * $this->pointsPerEuro() * $mult);
+        if ($points <= 0) {
+            return $fail('0 Punkte', $o['customerId'], $o['orderNumber']);
+        }
+
+        // Wurde die Bestellung schon abgerechnet oder zurückgebucht, nichts mehr gutschreiben
+        $already = $this->db->fetchOne(
+            'SELECT COUNT(*) FROM bonus_entry WHERE order_id = :o AND type IN (\'order\', \'order_reversal\')',
+            ['o' => Uuid::fromHexToBytes($orderId)]
+        );
+        if ((int) $already > 0) {
+            return $fail('bereits abgerechnet', $o['customerId'], $o['orderNumber']);
+        }
+
+        $reason = sprintf('Bestellung %s', $o['orderNumber']);
+        if ($acc['levelsOn'] && $mult > 1.0) {
+            $reason .= sprintf(' (Level %s ×%s)', $acc['level']['name'], rtrim(rtrim(number_format($mult, 2, ',', ''), '0'), ','));
+        }
+
+        return ['ok' => true, 'points' => $points, 'message' => '', 'customerId' => $o['customerId'], 'orderNumber' => $o['orderNumber'], 'reason' => $reason, 'mult' => $mult];
+    }
+
+    /**
      * Punkte für eine bezahlte Bestellung gutschreiben (einmal je Bestellung).
      *
      * @param \DateTimeImmutable|null $base Ausgangszeit für die Sperrfrist (Standard: jetzt; beim Nachtragen das Bestelldatum)
@@ -306,47 +354,16 @@ class BonusService
      */
     public function awardForOrder(string $orderId, ?\DateTimeImmutable $base = null): string
     {
-        $o = $this->orderBase($orderId);
-        if ($o === null) {
-            return 'skip:Bestellung nicht gefunden';
+        $plan = $this->planAward($orderId);
+        if (!$plan['ok']) {
+            return 'skip:' . $plan['message'];
         }
-        if ($o['customerId'] === null || $o['guest']) {
-            return 'skip:Gastbestellung (kein Kundenkonto)';
-        }
-        if (!$this->members->isParticipant($o['customerId'])) {
-            return 'skip:keine Teilnahme am Programm';
-        }
-        if ($o['euro'] <= 0) {
-            return 'skip:kein Warenwert';
-        }
-
-        $acc = $this->account($o['customerId']);
-        $mult = $acc['level']['mult'];
-        $points = (int) floor($o['euro'] * $this->pointsPerEuro() * $mult);
-        if ($points <= 0) {
-            return 'skip:0 Punkte';
-        }
-
-        // Wurde die Bestellung schon abgerechnet oder zurückgebucht, nichts mehr gutschreiben
-        $already = $this->db->fetchOne(
-            'SELECT COUNT(*) FROM bonus_points_entry WHERE order_id = :o AND type IN (\'order\', \'order_reversal\')',
-            ['o' => Uuid::fromHexToBytes($orderId)]
-        );
-        if ((int) $already > 0) {
-            return 'skip:bereits abgerechnet';
-        }
-
         $available = ($base ?? new \DateTimeImmutable('now', new \DateTimeZone('UTC')))
             ->setTimezone(new \DateTimeZone('UTC'))
             ->modify('+' . $this->lockDays() . ' days');
 
-        $reason = sprintf('Bestellung %s', $o['orderNumber']);
-        if ($acc['levelsOn'] && $mult > 1.0) {
-            $reason .= sprintf(' (Level %s ×%s)', $acc['level']['name'], rtrim(rtrim(number_format($mult, 2, ',', ''), '0'), ','));
-        }
-
-        return $this->addEntry($o['customerId'], 'order', $points, $reason, null, $orderId, $o['orderNumber'], $available)
-            ? 'ok:' . $points
+        return $this->addEntry((string) $plan['customerId'], 'order', $plan['points'], $plan['reason'], null, $orderId, $plan['orderNumber'], $available)
+            ? 'ok:' . $plan['points']
             : 'skip:bereits abgerechnet';
     }
 
@@ -357,7 +374,7 @@ class BonusService
     {
         $e = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(customer_id)) AS customer_id, points, order_number, available_at
-             FROM bonus_points_entry WHERE order_id = :o AND type = \'order\'',
+             FROM bonus_entry WHERE order_id = :o AND type = \'order\'',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if (!$e) {
@@ -391,7 +408,7 @@ class BonusService
              INNER JOIN `order` o ON o.id = li.order_id AND o.version_id = li.order_version_id
              INNER JOIN order_customer oc ON oc.order_id = o.id AND oc.order_version_id = o.version_id
              LEFT JOIN customer c ON c.id = oc.customer_id
-             WHERE li.order_id = :o AND li.order_version_id = :v AND li.type = \'bonus_points\' LIMIT 1',
+             WHERE li.order_id = :o AND li.order_version_id = :v AND li.type = \'bonus\' LIMIT 1',
             ['o' => Uuid::fromHexToBytes($orderId), 'v' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION)]
         );
         if (!$row || empty($row['customer_id']) || (int) $row['guest'] === 1) {
@@ -426,7 +443,7 @@ class BonusService
     {
         $e = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(customer_id)) AS customer_id, points, order_number
-             FROM bonus_points_entry WHERE order_id = :o AND type = \'redeem\'',
+             FROM bonus_entry WHERE order_id = :o AND type = \'redeem\'',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if (!$e) {
@@ -473,7 +490,7 @@ class BonusService
     public function addEntry(string $customerId, string $type, int $points, ?string $reason, ?string $ref, ?string $orderId, ?string $orderNumber, \DateTimeImmutable $availableAt): bool
     {
         return (int) $this->db->executeStatement(
-            'INSERT IGNORE INTO bonus_points_entry
+            'INSERT IGNORE INTO bonus_entry
                 (id, customer_id, type, points, order_id, order_number, ref, reason, available_at, created_at)
              VALUES (:id, :c, :t, :p, :o, :n, :ref, :r, :a, :now)',
             [

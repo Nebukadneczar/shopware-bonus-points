@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Service;
+namespace Bonus\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
@@ -31,7 +31,7 @@ class AdminService
                 COALESCE(SUM(CASE WHEN type IN (\'redeem\', \'redeem_refund\') THEN -points ELSE 0 END), 0) AS redeemed,
                 COALESCE(SUM(points), 0) AS outstanding,
                 COUNT(DISTINCT customer_id) AS customers
-             FROM bonus_points_entry'
+             FROM bonus_entry'
         ) ?: [];
         $unit = $this->bonus->pointValue();
         $outstanding = (int) ($row['outstanding'] ?? 0);
@@ -44,8 +44,8 @@ class AdminService
             'outstandingEuro' => round($outstanding * $unit, 2),
             'redeemedEuro' => round((int) ($row['redeemed'] ?? 0) * $unit, 2),
             'customers' => (int) ($row['customers'] ?? 0),
-            'referrals' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_referral'),
-            'blocked' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_member WHERE status = \'blocked\''),
+            'referrals' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_referral'),
+            'blocked' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_member WHERE status = \'blocked\''),
             'pointValue' => $unit,
         ];
     }
@@ -75,12 +75,12 @@ class AdminService
             $like = '%' . addcslashes($search, '%_\\') . '%';
             $params['q'] = $params['q2'] = $params['q3'] = $like;
         } elseif ($filter !== 'all') {
-            $where .= ' AND (m.customer_id IS NOT NULL OR EXISTS (SELECT 1 FROM bonus_points_entry x WHERE x.customer_id = c.id))';
+            $where .= ' AND (m.customer_id IS NOT NULL OR EXISTS (SELECT 1 FROM bonus_entry x WHERE x.customer_id = c.id))';
         }
         if ($filter === 'blocked') {
             $where .= ' AND m.status = \'blocked\'';
         } elseif ($filter === 'referrers') {
-            $where .= ' AND EXISTS (SELECT 1 FROM bonus_points_referral r WHERE r.referrer_id = c.id)';
+            $where .= ' AND EXISTS (SELECT 1 FROM bonus_referral r WHERE r.referrer_id = c.id)';
         } elseif ($filter === 'positive') {
             $having = ' HAVING available > 0';
         }
@@ -89,8 +89,8 @@ class AdminService
                     COALESCE(SUM(CASE WHEN e.available_at <= :now1 THEN e.points ELSE 0 END), 0) AS available,
                     COALESCE(SUM(CASE WHEN e.available_at > :now2 THEN e.points ELSE 0 END), 0) AS pending
              FROM customer c
-             LEFT JOIN bonus_points_member m ON m.customer_id = c.id
-             LEFT JOIN bonus_points_entry e ON e.customer_id = c.id';
+             LEFT JOIN bonus_member m ON m.customer_id = c.id
+             LEFT JOIN bonus_entry e ON e.customer_id = c.id';
         $tail = ' WHERE ' . $where . '
              GROUP BY c.id, c.first_name, c.last_name, c.email, c.customer_number, m.status' . $having;
 
@@ -195,7 +195,7 @@ class AdminService
     /**
      * Bezahlte Bestellungen ohne Punktebuchung finden und auf Wunsch nachbuchen.
      *
-     * @return array{count:int,booked:int,lines:list<string>}
+     * @return array{count:int,bookable:int,booked:int,summary:string,lines:list<string>}
      */
     public function importOrders(string $since, bool $apply): array
     {
@@ -207,25 +207,45 @@ class AdminService
                AND EXISTS (SELECT 1 FROM order_transaction ot
                            INNER JOIN state_machine_state ts ON ts.id = ot.state_id
                            WHERE ot.order_id = o.id AND ot.version_id = o.version_id AND ts.technical_name = \'paid\')
-               AND NOT EXISTS (SELECT 1 FROM bonus_points_entry e WHERE e.order_id = o.id AND e.type IN (\'order\', \'order_reversal\'))
+               AND NOT EXISTS (SELECT 1 FROM bonus_entry e WHERE e.order_id = o.id AND e.type IN (\'order\', \'order_reversal\'))
              ORDER BY o.order_date_time',
             ['v' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION), 'seit' => $since . ' 00:00:00']
         );
         $lines = [];
         $booked = 0;
+        $bookable = 0;
+        $skipped = [];
         foreach ($rows as $r) {
+            $date = substr((string) $r['order_date_time'], 0, 10);
+            $plan = $this->bonus->planAward((string) $r['id']);
+            if (!$plan['ok']) {
+                $skipped[$plan['message']] = ($skipped[$plan['message']] ?? 0) + 1;
+                $lines[] = $r['order_number'] . '  ' . $date . ': übersprungen, ' . $plan['message'];
+                continue;
+            }
+            ++$bookable;
             if (!$apply) {
-                $lines[] = $r['order_number'] . '  ' . substr((string) $r['order_date_time'], 0, 10);
+                $lines[] = $r['order_number'] . '  ' . $date . ': +' . $plan['points'] . ' Punkte';
                 continue;
             }
             $base = new \DateTimeImmutable((string) $r['order_date_time'], new \DateTimeZone('UTC'));
             $res = $this->bonus->awardForOrder((string) $r['id'], $base);
-            $lines[] = $r['order_number'] . ': ' . $res;
             if (str_starts_with($res, 'ok:')) {
                 ++$booked;
+                $lines[] = $r['order_number'] . '  ' . $date . ': +' . substr($res, 3) . ' Punkte gebucht';
+            } else {
+                $lines[] = $r['order_number'] . '  ' . $date . ': ' . $res;
             }
         }
+        $summary = sprintf('%d Bestellung(en) gefunden, %d davon buchbar', \count($rows), $bookable);
+        if ($skipped !== []) {
+            $parts = [];
+            foreach ($skipped as $why => $n) {
+                $parts[] = $n . ' × ' . $why;
+            }
+            $summary .= '. Übersprungen: ' . implode('; ', $parts);
+        }
 
-        return ['count' => \count($rows), 'booked' => $booked, 'lines' => $lines];
+        return ['count' => \count($rows), 'bookable' => $bookable, 'booked' => $booked, 'summary' => $summary, 'lines' => $lines];
     }
 }

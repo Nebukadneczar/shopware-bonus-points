@@ -3,18 +3,18 @@
 {% block component_account_register_address %}
     {{ parent() }}
 
-    {% if config('BonusPoints.config.active') %}
+    {% if config('Bonus.config.active') %}
         <div class="bpr mt-3">
-            {% if config('BonusPoints.config.enrollment') == 'optin' %}
+            {% if config('Bonus.config.enrollment') == 'optin' %}
                 <div class="form-check mb-2">
-                    <input type="checkbox" class="form-check-input" id="bpr-join" name="bonusPointsJoin" value="1">
+                    <input type="checkbox" class="form-check-input" id="bpr-join" name="bonusJoin" value="1">
                     <label class="form-check-label" for="bpr-join">Ich möchte am Bonusprogramm teilnehmen und bei jeder Bestellung Punkte sammeln.</label>
                 </div>
             {% endif %}
-            {% if config('BonusPoints.config.referralEnabled') %}
+            {% if config('Bonus.config.referralEnabled') %}
                 <div class="form-group">
                     <label class="form-label" for="bpr-ref">Empfehlungscode (optional)</label>
-                    <input type="text" class="form-control" id="bpr-ref" name="bonusPointsRef" maxlength="16" autocomplete="off">
+                    <input type="text" class="form-control" id="bpr-ref" name="bonusRef" maxlength="16" autocomplete="off">
                     <small class="form-text text-muted">Bist du über einen Empfehlungslink gekommen, musst du hier nichts eintragen.</small>
                 </div>
             {% endif %}

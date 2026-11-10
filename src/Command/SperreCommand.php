@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Command;
+namespace Bonus\Command;
 
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
@@ -11,7 +11,7 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'bonus-points:sperre', description: 'Sperrt einen Kunden für das Bonusprogramm (oder hebt die Sperre auf)')]
+#[AsCommand(name: 'bonus:sperre', description: 'Sperrt einen Kunden für das Bonusprogramm (oder hebt die Sperre auf)')]
 class SperreCommand extends Command
 {
     public function __construct(

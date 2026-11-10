@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Storefront\Controller;
+namespace Bonus\Storefront\Controller;
 
-use BonusPoints\Cart\BonusCartProcessor;
-use BonusPoints\Cart\GiftCartProcessor;
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
+use Bonus\Cart\BonusCartProcessor;
+use Bonus\Cart\GiftCartProcessor;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\PlatformRequest;
@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class RedeemController extends StorefrontController
 {
-    private const BACK_ROUTES = ['frontend.checkout.cart.page', 'frontend.checkout.confirm.page', 'frontend.account.bonus_points.page'];
+    private const BACK_ROUTES = ['frontend.checkout.cart.page', 'frontend.checkout.confirm.page', 'frontend.account.bonus.page'];
 
     public function __construct(
         private readonly CartService $cartService,
@@ -32,8 +32,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/bonus-points',
-        name: 'frontend.bonus_points.redeem',
+        path: '/checkout/bonus',
+        name: 'frontend.bonus.redeem',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']
@@ -85,8 +85,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/bonus-points/join',
-        name: 'frontend.bonus_points.join',
+        path: '/checkout/bonus/join',
+        name: 'frontend.bonus.join',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']
@@ -111,8 +111,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/bonus-points/gift',
-        name: 'frontend.bonus_points.gift',
+        path: '/checkout/bonus/gift',
+        name: 'frontend.bonus.gift',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']

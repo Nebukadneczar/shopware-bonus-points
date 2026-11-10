@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace BonusPoints\Cart;
+namespace Bonus\Cart;
 
-use BonusPoints\Service\BonusService;
-use BonusPoints\Service\MemberService;
+use Bonus\Service\BonusService;
+use Bonus\Service\MemberService;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\CartProcessorInterface;
@@ -19,8 +19,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
  */
 class LevelDiscountCartProcessor implements CartProcessorInterface
 {
-    public const TYPE = 'bonus_points_level_discount';
-    public const ID = 'bonus-points-level-discount';
+    public const TYPE = 'bonus_level_discount';
+    public const ID = 'bonus-level-discount';
 
     public function __construct(
         private readonly BonusService $bonus,

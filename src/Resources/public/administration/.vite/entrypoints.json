@@ -1,11 +1,11 @@
 {
   "base": "/",
   "entryPoints": {
-    "bonus-points": {
+    "bonus": {
       "css": [],
       "dev": false,
       "js": [
-        "/bundles/bonuspoints/administration/assets/bonus-points.js?v=2.0.0"
+        "/bundles/bonus/administration/assets/bonus.js?v=2.0.0"
       ],
       "legacy": false,
       "preload": []
