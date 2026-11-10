@@ -3,12 +3,12 @@
 {% block page_account_sidebar_link_orders %}
     {{ parent() }}
 
-    {% if config('MaxxpetBonus.config.active') %}
-        {% set mxbRoute = 'frontend.account.maxxpet.bonus.page' %}
-        <a href="{{ path(mxbRoute) }}"
+    {% if config('BonusPoints.config.active') %}
+        {% set bpRoute = 'frontend.account.bonus_points.page' %}
+        <a href="{{ path(bpRoute) }}"
            title="Meine Punkte"
-           class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as(mxbRoute) %} is-active{% endif %}"
-           {% if activeRoute is same as(mxbRoute) %} aria-current="page"{% endif %}>
+           class="list-group-item list-group-item-action account-aside-item{% if activeRoute is same as(bpRoute) %} is-active{% endif %}"
+           {% if activeRoute is same as(bpRoute) %} aria-current="page"{% endif %}>
             Meine Punkte
         </a>
     {% endif %}

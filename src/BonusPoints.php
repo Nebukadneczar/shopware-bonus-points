@@ -1,12 +1,12 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus;
+namespace BonusPoints;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Plugin;
 use Shopware\Core\Framework\Plugin\Context\UninstallContext;
 
-class MaxxpetBonus extends Plugin
+class BonusPoints extends Plugin
 {
     public function uninstall(UninstallContext $uninstallContext): void
     {
@@ -18,7 +18,7 @@ class MaxxpetBonus extends Plugin
         }
 
         $connection = $this->container->get(Connection::class);
-        foreach (['maxxpet_bonus_referral', 'maxxpet_bonus_member', 'maxxpet_bonus_entry'] as $table) {
+        foreach (['bonus_points_referral', 'bonus_points_member', 'bonus_points_entry'] as $table) {
             $connection->executeStatement('DROP TABLE IF EXISTS `' . $table . '`');
         }
     }

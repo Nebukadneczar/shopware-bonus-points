@@ -1,10 +1,10 @@
-/* MAXXPET Bonus-System: Admin-Modul „Bonuspunkte“ (ohne Build-Schritt, reines JavaScript). */
+/* Bonus-System: Admin-Modul „Bonuspunkte“ (ohne Build-Schritt, reines JavaScript). */
 (function () {
     'use strict';
     if (!window.Shopware || !Shopware.Component || !Shopware.Module) { return; }
 
-    var BASE = '/_action/maxxpet-bonus';
-    var ABOUT_VERSION = '1.8.0';
+    var BASE = '/_action/bonus-points';
+    var ABOUT_VERSION = '2.0.0';
 
     function http() { return Shopware.Application.getContainer('init').httpClient; }
     function headers() {
@@ -33,264 +33,272 @@
 
 
 var SETTINGS_TPL = `
-<div class="mxa-settings" v-else-if="tab === 'settings'">
-  <sw-card title="Allgemein" position-identifier="mxs-general">
-    <label class="mxa-check"><input type="checkbox" v-model="cfg.active"> Bonus-System aktiv</label>
-    <p class="mxa-hint">Aus: keine neuen Punkte, kein Einlösen, die Seite „Meine Punkte“ ist nicht erreichbar. Vorhandene Buchungen bleiben erhalten.</p>
-    <label class="mxa-field">Teilnahme
-      <select class="mxa-input" v-model="cfg.enrollment">
+<div class="bpa-settings" v-else-if="tab === 'settings'">
+  <sw-card title="Allgemein" position-identifier="bps-general">
+    <label class="bpa-check"><input type="checkbox" v-model="cfg.active"> Bonus-System aktiv</label>
+    <p class="bpa-hint">Aus: keine neuen Punkte, kein Einlösen, die Seite „Meine Punkte“ ist nicht erreichbar. Vorhandene Buchungen bleiben erhalten.</p>
+    <label class="bpa-field">Teilnahme
+      <select class="bpa-input" v-model="cfg.enrollment">
         <option value="auto">Automatisch: jeder Kunde mit Konto nimmt teil</option>
         <option value="optin">Per Beitritt: der Kunde meldet sich an (Checkbox bei Registrierung und Kasse, Knopf unter „Meine Punkte“)</option>
       </select>
     </label>
-    <label class="mxa-field">Teilnehmende Kundengruppen
-      <select class="mxa-input" multiple size="4" v-model="cfg.customerGroupIds">
+    <label class="bpa-field">Teilnehmende Kundengruppen
+      <select class="bpa-input" multiple size="4" v-model="cfg.customerGroupIds">
         <option v-for="g in groups" :key="g.id" :value="g.id">{{ g.name }}</option>
       </select>
       <small>Nichts auswählen = alle Gruppen. Für mehrere Gruppen Strg (Mac: Cmd) gedrückt halten.</small>
     </label>
   </sw-card>
 
-  <sw-card title="Punkte und Einlösen" position-identifier="mxs-points">
-    <div class="mxa-grid">
-      <label class="mxa-field">Punkte je 1 € Warenwert<input class="mxa-input" type="number" step="0.1" min="0" v-model.number="cfg.pointsPerEuro"><small>Basis: Bestellwert ohne Versand und nach Rabatten.</small></label>
-      <label class="mxa-field">Wert eines Punktes (€)<input class="mxa-input" type="number" step="0.001" min="0.001" v-model.number="cfg.pointValue"><small>{{ rateHint }}</small></label>
-      <label class="mxa-field">Sperrfrist (Tage)<input class="mxa-input" type="number" step="1" min="0" v-model.number="cfg.lockDays"><small>0 = sofort nach „Bezahlt“. 14 = erst nach der Widerrufsfrist.</small></label>
-      <label class="mxa-field">Mindestmenge zum Einlösen (Punkte)<input class="mxa-input" type="number" step="1" min="1" v-model.number="cfg.minRedeem"></label>
-      <label class="mxa-field">Mindest-Warenwert zum Einlösen (€)<input class="mxa-input" type="number" step="1" min="0" v-model.number="cfg.minOrderValue"><small>0 = keiner. Darunter sieht der Kunde, wie viel noch fehlt.</small></label>
-      <label class="mxa-field">Höchstanteil am Warenwert (%)<input class="mxa-input" type="number" step="1" min="0" max="100" v-model.number="cfg.maxRedeemPercent"><small>0 = keine Obergrenze.</small></label>
+  <sw-card title="Punkte und Einlösen" position-identifier="bps-points">
+    <div class="bpa-grid">
+      <label class="bpa-field">Punkte je 1 € Warenwert<input class="bpa-input" type="number" step="0.1" min="0" v-model.number="cfg.pointsPerEuro"><small>Basis: Bestellwert ohne Versand und nach Rabatten.</small></label>
+      <label class="bpa-field">Wert eines Punktes (€)<input class="bpa-input" type="number" step="0.001" min="0.001" v-model.number="cfg.pointValue"><small>{{ rateHint }}</small></label>
+      <label class="bpa-field">Sperrfrist (Tage)<input class="bpa-input" type="number" step="1" min="0" v-model.number="cfg.lockDays"><small>0 = sofort nach „Bezahlt“. 14 = erst nach der Widerrufsfrist.</small></label>
+      <label class="bpa-field">Mindestmenge zum Einlösen (Punkte)<input class="bpa-input" type="number" step="1" min="1" v-model.number="cfg.minRedeem"></label>
+      <label class="bpa-field">Mindest-Warenwert zum Einlösen (€)<input class="bpa-input" type="number" step="1" min="0" v-model.number="cfg.minOrderValue"><small>0 = keiner. Darunter sieht der Kunde, wie viel noch fehlt.</small></label>
+      <label class="bpa-field">Höchstanteil am Warenwert (%)<input class="bpa-input" type="number" step="1" min="0" max="100" v-model.number="cfg.maxRedeemPercent"><small>0 = keine Obergrenze.</small></label>
     </div>
-    <label class="mxa-check"><input type="checkbox" v-model="cfg.combineWithLevelDiscount"> Treuerabatt und Punkte-Einlösung dürfen kombiniert werden</label>
-    <p class="mxa-hint">Aus: Löst der Kunde Punkte ein, entfällt der Treuerabatt der Stufe.</p>
+    <label class="bpa-check"><input type="checkbox" v-model="cfg.combineWithLevelDiscount"> Treuerabatt und Punkte-Einlösung dürfen kombiniert werden</label>
+    <p class="bpa-hint">Aus: Löst der Kunde Punkte ein, entfällt der Treuerabatt der Stufe.</p>
   </sw-card>
 
-  <sw-card title="Stufen" position-identifier="mxs-levels">
-    <label class="mxa-field">Stufen-Modell
-      <select class="mxa-input" v-model="cfg.levelModel">
+  <sw-card title="Stufen" position-identifier="bps-levels">
+    <label class="bpa-field">Stufen-Modell
+      <select class="bpa-input" v-model="cfg.levelModel">
         <option value="lifetime">Lebenslang: alle jemals verdienten Punkte zählen</option>
         <option value="rolling12">Rollierend: nur die Punkte der letzten 12 Monate zählen</option>
         <option value="off">Aus: reines Punkteprogramm ohne Stufen</option>
       </select>
     </label>
-    <table class="mxa-table" v-if="cfg.levelModel !== 'off'">
+    <table class="bpa-table" v-if="cfg.levelModel !== 'off'">
       <thead><tr><th>Name</th><th>Ab Statuspunkten</th><th>Punkte-Faktor</th><th>Treuerabatt (%)</th><th></th></tr></thead>
       <tbody>
         <tr v-for="(l, i) in levelRows" :key="i">
-          <td><input class="mxa-input" type="text" v-model="l.name" placeholder="z. B. Silber"></td>
-          <td><input class="mxa-input" type="number" min="0" step="1" v-model.number="l.min" :disabled="i === 0"></td>
-          <td><input class="mxa-input" type="number" min="0.1" step="0.05" v-model.number="l.mult"></td>
-          <td><input class="mxa-input" type="number" min="0" max="100" step="0.5" v-model.number="l.discount"></td>
-          <td><button type="button" class="mxa-btn mxa-btn--small" @click="levelRows.splice(i, 1)" :disabled="levelRows.length <= 1" aria-label="Stufe entfernen">Entfernen</button></td>
+          <td><input class="bpa-input" type="text" v-model="l.name" placeholder="z. B. Silber"></td>
+          <td><input class="bpa-input" type="number" min="0" step="1" v-model.number="l.min" :disabled="i === 0"></td>
+          <td><input class="bpa-input" type="number" min="0.1" step="0.05" v-model.number="l.mult"></td>
+          <td><input class="bpa-input" type="number" min="0" max="100" step="0.5" v-model.number="l.discount"></td>
+          <td><button type="button" class="bpa-btn bpa-btn--small" @click="levelRows.splice(i, 1)" :disabled="levelRows.length <= 1" aria-label="Stufe entfernen">Entfernen</button></td>
         </tr>
       </tbody>
     </table>
-    <button v-if="cfg.levelModel !== 'off'" type="button" class="mxa-btn" @click="addLevel">Stufe hinzufügen</button>
-    <p class="mxa-hint" v-if="cfg.levelModel !== 'off'">Faktor 1,15 = 15 % mehr Punkte je Euro. Die erste Stufe gilt immer ab 0 Punkten. Ein Treuerabatt wird im Warenkorb als eigene Zeile abgezogen.</p>
+    <button v-if="cfg.levelModel !== 'off'" type="button" class="bpa-btn" @click="addLevel">Stufe hinzufügen</button>
+    <p class="bpa-hint" v-if="cfg.levelModel !== 'off'">Faktor 1,15 = 15 % mehr Punkte je Euro. Die erste Stufe gilt immer ab 0 Punkten. Ein Treuerabatt wird im Warenkorb als eigene Zeile abgezogen.</p>
   </sw-card>
 
-  <sw-card title="Weitere Aktionen" position-identifier="mxs-actions">
-    <p class="mxa-hint">Punkte für einmalige Aktionen. 0 = aus.</p>
-    <div class="mxa-grid">
-      <label class="mxa-field">Registrierung<input class="mxa-input" type="number" min="0" step="1" v-model.number="cfg.pointsRegistration"></label>
-      <label class="mxa-field">Newsletter-Anmeldung<input class="mxa-input" type="number" min="0" step="1" v-model.number="cfg.pointsNewsletter"></label>
-      <label class="mxa-field">Produktbewertung (je Produkt)<input class="mxa-input" type="number" min="0" step="1" v-model.number="cfg.pointsReview"></label>
-      <label class="mxa-field">Geburtstag (jährlich)<input class="mxa-input" type="number" min="0" step="1" v-model.number="cfg.pointsBirthday"></label>
+  <sw-card title="Weitere Aktionen" position-identifier="bps-actions">
+    <p class="bpa-hint">Punkte für einmalige Aktionen. 0 = aus.</p>
+    <div class="bpa-grid">
+      <label class="bpa-field">Registrierung<input class="bpa-input" type="number" min="0" step="1" v-model.number="cfg.pointsRegistration"></label>
+      <label class="bpa-field">Newsletter-Anmeldung<input class="bpa-input" type="number" min="0" step="1" v-model.number="cfg.pointsNewsletter"></label>
+      <label class="bpa-field">Produktbewertung (je Produkt)<input class="bpa-input" type="number" min="0" step="1" v-model.number="cfg.pointsReview"></label>
+      <label class="bpa-field">Geburtstag (jährlich)<input class="bpa-input" type="number" min="0" step="1" v-model.number="cfg.pointsBirthday"></label>
     </div>
   </sw-card>
 
-  <sw-card title="Empfehlungssystem" position-identifier="mxs-referral">
-    <label class="mxa-check"><input type="checkbox" v-model="cfg.referralEnabled"> Empfehlungssystem aktiv</label>
-    <div class="mxa-grid">
-      <label class="mxa-field">Provision: Punkte je 1 € Warenwert<input class="mxa-input" type="number" min="0" step="0.1" v-model.number="cfg.referralPointsPerEuro"><small>Für jede bezahlte Bestellung des Geworbenen, lebenslang.</small></label>
-      <label class="mxa-field">Willkommenspunkte für den Geworbenen<input class="mxa-input" type="number" min="0" step="1" v-model.number="cfg.referralWelcome"><small>0 = keine.</small></label>
+  <sw-card title="Empfehlungssystem" position-identifier="bps-referral">
+    <label class="bpa-check"><input type="checkbox" v-model="cfg.referralEnabled"> Empfehlungssystem aktiv</label>
+    <div class="bpa-grid">
+      <label class="bpa-field">Provision: Punkte je 1 € Warenwert<input class="bpa-input" type="number" min="0" step="0.1" v-model.number="cfg.referralPointsPerEuro"><small>Für jede bezahlte Bestellung des Geworbenen, lebenslang.</small></label>
+      <label class="bpa-field">Willkommenspunkte für den Geworbenen<input class="bpa-input" type="number" min="0" step="1" v-model.number="cfg.referralWelcome"><small>0 = keine.</small></label>
     </div>
   </sw-card>
 
-  <sw-card title="Gratisprodukte" position-identifier="mxs-gifts">
-    <p class="mxa-hint">Geschenke ab einem Warenwert, optional ab einer Stufe. „Automatisch“ legt das Geschenk selbst in den Warenkorb, bei „Zur Auswahl“ wählt der Kunde eines aus. Es wird kein Lagerbestand abgebucht, die Bestellung zeigt Artikelnummer und Bezeichnung zum Verpacken.</p>
-    <table class="mxa-table" v-if="giftRows.length">
+  <sw-card title="Darstellung" position-identifier="bps-look">
+    <p class="bpa-hint">Farben der Punkte-Box im Warenkorb und der Seite „Meine Punkte“.</p>
+    <div class="bpa-grid">
+      <label class="bpa-field">Hauptfarbe<input type="color" class="bpa-color" v-model="cfg.colorPrimary"></label>
+      <label class="bpa-field">Akzentfarbe (Knöpfe, Fortschritt)<input type="color" class="bpa-color" v-model="cfg.colorAccent"></label>
+    </div>
+  </sw-card>
+
+  <sw-card title="Gratisprodukte" position-identifier="bps-gifts">
+    <p class="bpa-hint">Geschenke ab einem Warenwert, optional ab einer Stufe. „Automatisch“ legt das Geschenk selbst in den Warenkorb, bei „Zur Auswahl“ wählt der Kunde eines aus. Es wird kein Lagerbestand abgebucht, die Bestellung zeigt Artikelnummer und Bezeichnung zum Verpacken.</p>
+    <table class="bpa-table" v-if="giftRows.length">
       <thead><tr><th>Artikelnummer</th><th>Bezeichnung</th><th>Ab Warenwert (€)</th><th>Ab Stufe</th><th>Art</th><th></th></tr></thead>
       <tbody>
         <tr v-for="(g, i) in giftRows" :key="i">
-          <td><input class="mxa-input" type="text" v-model="g.sku" placeholder="ART-1001"></td>
-          <td><input class="mxa-input" type="text" v-model="g.label" placeholder="Beispiel-Geschenk"></td>
-          <td><input class="mxa-input" type="number" min="0" step="1" v-model.number="g.min"></td>
-          <td><select class="mxa-input" v-model="g.level"><option value="">jede</option><option v-for="l in levelRows" :key="l.name" :value="l.name">{{ l.name }}</option></select></td>
-          <td><select class="mxa-input" v-model="g.mode"><option value="auto">Automatisch</option><option value="wahl">Zur Auswahl</option></select></td>
-          <td><button type="button" class="mxa-btn mxa-btn--small" @click="giftRows.splice(i, 1)">Entfernen</button></td>
+          <td><input class="bpa-input" type="text" v-model="g.sku" placeholder="ART-1001"></td>
+          <td><input class="bpa-input" type="text" v-model="g.label" placeholder="Beispiel-Geschenk"></td>
+          <td><input class="bpa-input" type="number" min="0" step="1" v-model.number="g.min"></td>
+          <td><select class="bpa-input" v-model="g.level"><option value="">jede</option><option v-for="l in levelRows" :key="l.name" :value="l.name">{{ l.name }}</option></select></td>
+          <td><select class="bpa-input" v-model="g.mode"><option value="auto">Automatisch</option><option value="wahl">Zur Auswahl</option></select></td>
+          <td><button type="button" class="bpa-btn bpa-btn--small" @click="giftRows.splice(i, 1)">Entfernen</button></td>
         </tr>
       </tbody>
     </table>
-    <p class="mxa-hint" v-else>Noch keine Regel.</p>
-    <button type="button" class="mxa-btn" @click="giftRows.push({ sku: '', label: '', min: 50, level: '', mode: 'auto' })">Regel hinzufügen</button>
+    <p class="bpa-hint" v-else>Noch keine Regel.</p>
+    <button type="button" class="bpa-btn" @click="giftRows.push({ sku: '', label: '', min: 50, level: '', mode: 'auto' })">Regel hinzufügen</button>
   </sw-card>
 
-  <div class="mxa-savebar">
-    <button type="button" class="mxa-btn mxa-btn--primary" :disabled="saving" @click="saveSettings">{{ saving ? 'Speichere …' : 'Einstellungen speichern' }}</button>
-    <button type="button" class="mxa-btn" :disabled="saving" @click="loadSettings">Änderungen verwerfen</button>
+  <div class="bpa-savebar">
+    <button type="button" class="bpa-btn bpa-btn--primary" :disabled="saving" @click="saveSettings">{{ saving ? 'Speichere …' : 'Einstellungen speichern' }}</button>
+    <button type="button" class="bpa-btn" :disabled="saving" @click="loadSettings">Änderungen verwerfen</button>
   </div>
 </div>`;
 
 var ABOUT_TPL = `
-<div class="mxa-about" v-else>
-  <sw-card title="Danke!" position-identifier="mxs-about">
-    <div class="mxa-about-hero">
-      <button type="button" class="mxa-egg" @click="eggClick" aria-label="Stern">
+<div class="bpa-about" v-else>
+  <sw-card title="Danke!" position-identifier="bps-about">
+    <div class="bpa-about-hero">
+      <button type="button" class="bpa-egg" @click="eggClick" aria-label="Stern">
         <svg viewBox="0 0 24 24" width="56" height="56"><path fill="currentColor" d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg>
       </button>
       <h3>Bonus-System</h3>
-      <p class="mxa-hint">Version ${ABOUT_VERSION}</p>
+      <p class="bpa-hint">Version ${ABOUT_VERSION}</p>
     </div>
-    <p class="mxa-about-text">Aus einer Idee ist ein Treueprogramm geworden: mit Punkten, Stufen, Gratisprodukten, Empfehlungen und einer eigenen Verwaltung. Das hat viel Planung, Testen auf dem Testshop und genaues Hinsehen gebraucht. Vielen Dank an alle, die mitgedacht und mitgetestet haben.</p>
-    <div class="mxa-credits">
+    <p class="bpa-about-text">Aus einer Idee ist ein Treueprogramm geworden: mit Punkten, Stufen, Gratisprodukten, Empfehlungen und einer eigenen Verwaltung. Das hat viel Planung, Testen auf dem Testshop und genaues Hinsehen gebraucht. Vielen Dank an alle, die mitgedacht und mitgetestet haben.</p>
+    <div class="bpa-credits">
       <div><span>Ideengeber und Hersteller</span><strong>Markus Czarnetzki, Oberhausen, NRW</strong></div>
       <div><span>Webseite</span><strong><a href="https://macdata.de" target="_blank" rel="noopener noreferrer">macdata.de</a></strong></div>
       <div><span>Programmierung</span><strong>Markus Czarnetzki &amp; Claude, KI-Assistent von Anthropic, im Auftrag von MAXXPET</strong></div>
       <div><span>Gebaut für</span><strong>Shopware 6.7</strong></div>
     </div>
-    <p class="mxa-copy">© 1999 macdata.de · Plugin © 2026 Markus Czarnetzki</p>
-    <p class="mxa-about-foot" v-if="egg">🎉 Gefunden! Jeder Punkt zählt, besonders der letzte. Danke fürs Ausprobieren.</p>
-    <p class="mxa-hint" v-else>Tipp: Manche Sterne mögen es, wenn man öfter hinschaut.</p>
+    <p class="bpa-copy">© 1999 macdata.de · Plugin © 2026 Markus Czarnetzki</p>
+    <p class="bpa-about-foot" v-if="egg">🎉 Gefunden! Jeder Punkt zählt, besonders der letzte. Danke fürs Ausprobieren.</p>
+    <p class="bpa-hint" v-else>Tipp: Manche Sterne mögen es, wenn man öfter hinschaut.</p>
   </sw-card>
 </div>`;
 
     var TEMPLATE = `
-<sw-page class="maxxpet-bonus-index">
+<sw-page class="bonus-points-index">
   <template #smart-bar-header><h2>Bonuspunkte</h2></template>
   <template #smart-bar-actions>
-    <button class="mxa-btn" type="button" @click="exportCsv">CSV-Export</button>
-    <button class="mxa-btn" type="button" @click="openSettings">Einstellungen</button>
+    <button class="bpa-btn" type="button" @click="exportCsv">CSV-Export</button>
+    <button class="bpa-btn" type="button" @click="openSettings">Einstellungen</button>
   </template>
   <template #content>
     <sw-card-view>
-      <div class="mxa-tabs" role="tablist">
+      <div class="bpa-tabs" role="tablist">
         <button type="button" role="tab" :class="{ 'is-on': tab === 'main' }" @click="tab = 'main'">Übersicht</button>
         <button type="button" role="tab" :class="{ 'is-on': tab === 'settings' }" @click="openSettings">Einstellungen</button>
         <button type="button" role="tab" :class="{ 'is-on': tab === 'about' }" @click="tab = 'about'">Danke</button>
       </div>
       <template v-if="tab === 'main'">
-      <div class="mxa-stats" v-if="stats">
-        <div class="mxa-stat"><span>Offene Punkte</span><strong>{{ fmt(stats.outstanding) }}</strong><small>Verbindlichkeit {{ euro(stats.outstandingEuro) }}</small></div>
-        <div class="mxa-stat"><span>Vergeben</span><strong>{{ fmt(stats.issued) }}</strong><small>{{ fmt(stats.reversed) }} zurückgebucht</small></div>
-        <div class="mxa-stat"><span>Eingelöst</span><strong>{{ fmt(stats.redeemed) }}</strong><small>{{ euro(stats.redeemedEuro) }} Rabatt</small></div>
-        <div class="mxa-stat"><span>Kunden mit Punkten</span><strong>{{ fmt(stats.customers) }}</strong><small>{{ fmt(stats.referrals) }} Empfehlungen · {{ fmt(stats.blocked) }} gesperrt</small></div>
+      <div class="bpa-stats" v-if="stats">
+        <div class="bpa-stat"><span>Offene Punkte</span><strong>{{ fmt(stats.outstanding) }}</strong><small>Verbindlichkeit {{ euro(stats.outstandingEuro) }}</small></div>
+        <div class="bpa-stat"><span>Vergeben</span><strong>{{ fmt(stats.issued) }}</strong><small>{{ fmt(stats.reversed) }} zurückgebucht</small></div>
+        <div class="bpa-stat"><span>Eingelöst</span><strong>{{ fmt(stats.redeemed) }}</strong><small>{{ euro(stats.redeemedEuro) }} Rabatt</small></div>
+        <div class="bpa-stat"><span>Kunden mit Punkten</span><strong>{{ fmt(stats.customers) }}</strong><small>{{ fmt(stats.referrals) }} Empfehlungen · {{ fmt(stats.blocked) }} gesperrt</small></div>
       </div>
 
-      <sw-card title="Kunden" position-identifier="maxxpet-bonus-list">
-        <div class="mxa-toolbar">
-          <input class="mxa-input" type="search" v-model="search" @input="onSearch" placeholder="Suchen: Name, E-Mail oder Kundennummer">
-          <select class="mxa-input mxa-select" v-model="filter" @change="load(1)" aria-label="Filter">
+      <sw-card title="Kunden" position-identifier="bonus-points-list">
+        <div class="bpa-toolbar">
+          <input class="bpa-input" type="search" v-model="search" @input="onSearch" placeholder="Suchen: Name, E-Mail oder Kundennummer">
+          <select class="bpa-input bpa-select" v-model="filter" @change="load(1)" aria-label="Filter">
             <option value="active">Kunden im Programm</option>
             <option value="positive">Mit verfügbaren Punkten</option>
             <option value="referrers">Werber</option>
             <option value="blocked">Gesperrte</option>
             <option value="all">Alle Kunden</option>
           </select>
-          <span class="mxa-count" v-if="!loading">{{ fmt(list.total) }} Treffer</span>
-          <span class="mxa-count" v-else>Lade …</span>
+          <span class="bpa-count" v-if="!loading">{{ fmt(list.total) }} Treffer</span>
+          <span class="bpa-count" v-else>Lade …</span>
         </div>
 
-        <table class="mxa-table" v-if="list.items.length">
+        <table class="bpa-table" v-if="list.items.length">
           <thead>
             <tr>
-              <th class="mxa-sort" @click="setSort('name')">Kunde {{ arrow('name') }}</th>
-              <th class="mxa-sort" @click="setSort('email')">E-Mail {{ arrow('email') }}</th>
-              <th class="mxa-r mxa-sort" @click="setSort('available')">Verfügbar {{ arrow('available') }}</th>
-              <th class="mxa-r mxa-sort" @click="setSort('pending')">Ausstehend {{ arrow('pending') }}</th>
-              <th class="mxa-r">Wert</th>
+              <th class="bpa-sort" @click="setSort('name')">Kunde {{ arrow('name') }}</th>
+              <th class="bpa-sort" @click="setSort('email')">E-Mail {{ arrow('email') }}</th>
+              <th class="bpa-r bpa-sort" @click="setSort('available')">Verfügbar {{ arrow('available') }}</th>
+              <th class="bpa-r bpa-sort" @click="setSort('pending')">Ausstehend {{ arrow('pending') }}</th>
+              <th class="bpa-r">Wert</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="c in list.items" :key="c.id" class="mxa-click" tabindex="0" @click="open(c.id)" @keyup.enter="open(c.id)">
+            <tr v-for="c in list.items" :key="c.id" class="bpa-click" tabindex="0" @click="open(c.id)" @keyup.enter="open(c.id)">
               <td><strong>{{ c.name }}</strong><br><small>{{ c.customerNumber }}</small></td>
               <td>{{ c.email }}</td>
-              <td class="mxa-r"><strong>{{ fmt(c.available) }}</strong></td>
-              <td class="mxa-r">{{ fmt(c.pending) }}</td>
-              <td class="mxa-r">{{ euro(c.available * stats.pointValue) }}</td>
+              <td class="bpa-r"><strong>{{ fmt(c.available) }}</strong></td>
+              <td class="bpa-r">{{ fmt(c.pending) }}</td>
+              <td class="bpa-r">{{ euro(c.available * stats.pointValue) }}</td>
               <td>
-                <span class="mxa-badge mxa-badge--bad" v-if="c.blocked">gesperrt</span>
-                <span class="mxa-badge mxa-badge--ok" v-else-if="c.member || c.available || c.pending">aktiv</span>
+                <span class="bpa-badge bpa-badge--bad" v-if="c.blocked">gesperrt</span>
+                <span class="bpa-badge bpa-badge--ok" v-else-if="c.member || c.available || c.pending">aktiv</span>
               </td>
             </tr>
           </tbody>
         </table>
-        <p class="mxa-empty" v-else-if="!loading">Keine Kunden gefunden. Ohne Suchbegriff erscheinen nur Kunden im Programm; mit dem Filter „Alle Kunden“ siehst du jeden.</p>
+        <p class="bpa-empty" v-else-if="!loading">Keine Kunden gefunden. Ohne Suchbegriff erscheinen nur Kunden im Programm; mit dem Filter „Alle Kunden“ siehst du jeden.</p>
 
-        <div class="mxa-pager" v-if="list.total > limit">
-          <button class="mxa-btn" type="button" :disabled="page <= 1" @click="load(page - 1)">Zurück</button>
+        <div class="bpa-pager" v-if="list.total > limit">
+          <button class="bpa-btn" type="button" :disabled="page <= 1" @click="load(page - 1)">Zurück</button>
           <span>Seite {{ page }} von {{ totalPages }}</span>
-          <button class="mxa-btn" type="button" :disabled="page >= totalPages" @click="load(page + 1)">Weiter</button>
+          <button class="bpa-btn" type="button" :disabled="page >= totalPages" @click="load(page + 1)">Weiter</button>
         </div>
       </sw-card>
 
-      <sw-card title="Bestellungen nachbuchen" position-identifier="maxxpet-bonus-import">
-        <p class="mxa-hint">Findet bezahlte Bestellungen ohne Punktebuchung, zum Beispiel aus der Zeit vor der Aktivierung des Bonus-Systems, und bucht sie nach. Zuerst die Vorschau ansehen.</p>
-        <div class="mxa-toolbar">
-          <label>Bestellungen ab <input class="mxa-input mxa-date" type="date" v-model="imp.since"></label>
-          <button class="mxa-btn" type="button" :disabled="!imp.since" @click="doImport(false)">Vorschau</button>
-          <button class="mxa-btn mxa-btn--primary" type="button" :disabled="!imp.since || !imp.previewed" @click="doImport(true)">Jetzt nachbuchen</button>
+      <sw-card title="Bestellungen nachbuchen" position-identifier="bonus-points-import">
+        <p class="bpa-hint">Findet bezahlte Bestellungen ohne Punktebuchung, zum Beispiel aus der Zeit vor der Aktivierung des Bonus-Systems, und bucht sie nach. Zuerst die Vorschau ansehen.</p>
+        <div class="bpa-toolbar">
+          <label>Bestellungen ab <input class="bpa-input bpa-date" type="date" v-model="imp.since"></label>
+          <button class="bpa-btn" type="button" :disabled="!imp.since" @click="doImport(false)">Vorschau</button>
+          <button class="bpa-btn bpa-btn--primary" type="button" :disabled="!imp.since || !imp.previewed" @click="doImport(true)">Jetzt nachbuchen</button>
         </div>
-        <pre v-if="imp.result" class="mxa-pre">{{ imp.result }}</pre>
+        <pre v-if="imp.result" class="bpa-pre">{{ imp.result }}</pre>
       </sw-card>
       </template>
       ${SETTINGS_TPL}
       ${ABOUT_TPL}
     </sw-card-view>
 
-    <div class="mxa-overlay" v-if="detail || drawerLoading" @click.self="close">
-      <aside class="mxa-drawer" role="dialog" aria-modal="true" aria-label="Kundendetails">
-        <p v-if="drawerLoading && !detail" class="mxa-hint">Lade …</p>
+    <div class="bpa-overlay" v-if="detail || drawerLoading" @click.self="close">
+      <aside class="bpa-drawer" role="dialog" aria-modal="true" aria-label="Kundendetails">
+        <p v-if="drawerLoading && !detail" class="bpa-hint">Lade …</p>
         <template v-if="detail">
-          <header class="mxa-dhead">
+          <header class="bpa-dhead">
             <div>
               <h3>{{ detail.name }}</h3>
-              <div class="mxa-sub">{{ detail.email }} · {{ detail.customerNumber }}</div>
-              <div class="mxa-badges">
-                <span class="mxa-badge mxa-badge--bad" v-if="detail.state.blocked">gesperrt</span>
-                <span class="mxa-badge mxa-badge--ok" v-else-if="detail.participant">nimmt teil</span>
-                <span class="mxa-badge" v-else>nimmt nicht teil</span>
-                <span class="mxa-badge mxa-badge--lvl" v-if="detail.account.levelsOn && detail.participant">Level {{ detail.account.level.name }}</span>
-                <span class="mxa-badge" v-if="detail.referral.count">{{ detail.referral.count }} geworben</span>
+              <div class="bpa-sub">{{ detail.email }} · {{ detail.customerNumber }}</div>
+              <div class="bpa-badges">
+                <span class="bpa-badge bpa-badge--bad" v-if="detail.state.blocked">gesperrt</span>
+                <span class="bpa-badge bpa-badge--ok" v-else-if="detail.participant">nimmt teil</span>
+                <span class="bpa-badge" v-else>nimmt nicht teil</span>
+                <span class="bpa-badge bpa-badge--lvl" v-if="detail.account.levelsOn && detail.participant">Level {{ detail.account.level.name }}</span>
+                <span class="bpa-badge" v-if="detail.referral.count">{{ detail.referral.count }} geworben</span>
               </div>
             </div>
-            <button class="mxa-x" type="button" @click="close" aria-label="Schließen">×</button>
+            <button class="bpa-x" type="button" @click="close" aria-label="Schließen">×</button>
           </header>
 
-          <div class="mxa-kpis">
+          <div class="bpa-kpis">
             <div><span>Verfügbar</span><strong>{{ fmt(detail.account.available) }}</strong><small>{{ euro(detail.account.available * detail.pointValue) }}</small></div>
             <div><span>Ausstehend</span><strong>{{ fmt(detail.account.pending) }}</strong></div>
             <div v-if="detail.account.levelsOn"><span>Statuspunkte</span><strong>{{ fmt(detail.account.status) }}</strong>
               <small v-if="detail.account.next">noch {{ fmt(detail.account.missing) }} bis {{ detail.account.next.name }}</small><small v-else>höchstes Level</small></div>
           </div>
-          <div class="mxa-bar" v-if="detail.account.levelsOn && detail.account.next"><span :style="{ width: detail.account.progress + '%' }"></span></div>
+          <div class="bpa-bar" v-if="detail.account.levelsOn && detail.account.next"><span :style="{ width: detail.account.progress + '%' }"></span></div>
 
-          <div class="mxa-links">
-            <button class="mxa-btn mxa-btn--small" type="button" @click="goCustomer(detail.id)">Kunde im Admin öffnen</button>
-            <button class="mxa-btn mxa-btn--small" type="button" @click="doBlock(!detail.state.blocked)">{{ detail.state.blocked ? 'Sperre aufheben' : 'Kunden sperren' }}</button>
+          <div class="bpa-links">
+            <button class="bpa-btn bpa-btn--small" type="button" @click="goCustomer(detail.id)">Kunde im Admin öffnen</button>
+            <button class="bpa-btn bpa-btn--small" type="button" @click="doBlock(!detail.state.blocked)">{{ detail.state.blocked ? 'Sperre aufheben' : 'Kunden sperren' }}</button>
           </div>
 
-          <section class="mxa-book">
+          <section class="bpa-book">
             <h4>Punkte buchen</h4>
-            <div class="mxa-quick">
-              <button type="button" class="mxa-chip" v-for="n in [50, 100, 250, 500, -50, -100]" :key="n" @click="book.points = n">{{ n > 0 ? '+' : '' }}{{ n }}</button>
+            <div class="bpa-quick">
+              <button type="button" class="bpa-chip" v-for="n in [50, 100, 250, 500, -50, -100]" :key="n" @click="book.points = n">{{ n > 0 ? '+' : '' }}{{ n }}</button>
             </div>
-            <div class="mxa-row">
-              <input class="mxa-input mxa-pts" type="number" v-model.number="book.points" placeholder="Punkte (+/−)">
-              <select class="mxa-input" v-model="book.preset" @change="applyPreset" aria-label="Vorlage Begründung">
+            <div class="bpa-row">
+              <input class="bpa-input bpa-pts" type="number" v-model.number="book.points" placeholder="Punkte (+/−)">
+              <select class="bpa-input" v-model="book.preset" @change="applyPreset" aria-label="Vorlage Begründung">
                 <option value="">Vorlage Begründung …</option>
                 <option v-for="p in presets" :key="p" :value="p">{{ p }}</option>
               </select>
             </div>
-            <input class="mxa-input mxa-full" type="text" v-model="book.reason" maxlength="200" placeholder="Begründung (der Kunde sieht sie in seinem Konto)">
-            <div class="mxa-preview" v-if="book.points">Neuer Stand: <strong>{{ fmt(detail.account.available + book.points) }}</strong> Punkte ({{ book.points > 0 ? '+' : '' }}{{ fmt(book.points) }})</div>
-            <button class="mxa-btn mxa-btn--primary" type="button" :disabled="!canBook" @click="doBook">Buchen</button>
+            <input class="bpa-input bpa-full" type="text" v-model="book.reason" maxlength="200" placeholder="Begründung (der Kunde sieht sie in seinem Konto)">
+            <div class="bpa-preview" v-if="book.points">Neuer Stand: <strong>{{ fmt(detail.account.available + book.points) }}</strong> Punkte ({{ book.points > 0 ? '+' : '' }}{{ fmt(book.points) }})</div>
+            <button class="bpa-btn bpa-btn--primary" type="button" :disabled="!canBook" @click="doBook">Buchen</button>
           </section>
 
           <h4>Buchungen</h4>
-          <p class="mxa-hint" v-if="!detail.entries.length">Noch keine Buchungen.</p>
-          <table class="mxa-table mxa-table--small" v-else>
-            <thead><tr><th>Datum</th><th>Vorgang</th><th class="mxa-r">Punkte</th><th>Status</th></tr></thead>
+          <p class="bpa-hint" v-if="!detail.entries.length">Noch keine Buchungen.</p>
+          <table class="bpa-table bpa-table--small" v-else>
+            <thead><tr><th>Datum</th><th>Vorgang</th><th class="bpa-r">Punkte</th><th>Status</th></tr></thead>
             <tbody>
               <tr v-for="(e, i) in detail.entries" :key="i">
                 <td>{{ dt(e.createdAt) }}</td>
@@ -298,7 +306,7 @@ var ABOUT_TPL = `
                   <a href="#" v-if="e.orderId" @click.prevent="goOrder(e.orderId)">{{ e.reason || e.label }}</a>
                   <span v-else>{{ e.reason || e.label }}</span>
                 </td>
-                <td class="mxa-r" :class="e.points < 0 ? 'mxa-minus' : 'mxa-plus'">{{ e.points > 0 ? '+' : '' }}{{ fmt(e.points) }}</td>
+                <td class="bpa-r" :class="e.points < 0 ? 'bpa-minus' : 'bpa-plus'">{{ e.points > 0 ? '+' : '' }}{{ fmt(e.points) }}</td>
                 <td>{{ e.pending ? 'ab ' + dt(e.availableAt) : 'verfügbar' }}</td>
               </tr>
             </tbody>
@@ -310,75 +318,76 @@ var ABOUT_TPL = `
 </sw-page>`;
 
     var STYLE = `
-.mxa-about-hero{text-align:center;padding:10px 0 4px}.mxa-about-hero h3{margin:6px 0 0;font-size:22px;color:#043477}
-.mxa-egg{border:0;background:#e3f4e4;color:#27832a;width:92px;height:92px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .15s}
-.mxa-egg:hover{transform:scale(1.06)}.mxa-egg:active{transform:scale(.94)}
-.mxa-about-text{max-width:640px;margin:12px auto;text-align:center;color:#173b59;line-height:1.55}
-.mxa-credits{max-width:640px;margin:16px auto;display:grid;gap:8px}
-.mxa-credits div{background:#f4f8fd;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column}
-.mxa-credits span{font-size:12px;color:#52667a;text-transform:uppercase;letter-spacing:.04em}.mxa-credits strong{color:#043477}
-.mxa-credits a{color:#0649a8}.mxa-copy{text-align:center;color:#52667a;font-size:13px;margin:14px 0 4px}
-.mxa-about-foot{text-align:center;font-weight:700;color:#1b6b1f}.mxa-about .mxa-hint{text-align:center}
-.mxa-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #b6c3d1;background:#fff;color:#1b2a3a;border-radius:6px;padding:8px 14px;min-height:38px;font:inherit;font-weight:600;cursor:pointer}
-.mxa-btn:hover:not(:disabled){background:#f4f8fd;border-color:#0649a8}
-.mxa-btn:disabled{opacity:.5;cursor:not-allowed}
-.mxa-btn--primary{background:#0649a8;border-color:#0649a8;color:#fff}.mxa-btn--primary:hover:not(:disabled){background:#043477;border-color:#043477}
-.mxa-btn--small{padding:4px 10px;min-height:30px;font-size:13px}
-.mxa-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid #d9e2ee}
-.mxa-tabs button{border:0;background:none;padding:10px 18px;font:inherit;font-weight:600;color:#52667a;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
-.mxa-tabs button.is-on{color:#0649a8;border-bottom-color:#0649a8}
-.mxa-settings .mxa-field{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-weight:600;color:#173b59}
-.mxa-settings .mxa-field small{font-weight:400;color:#52667a}
-.mxa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:4px 18px}
-.mxa-check{display:flex;gap:8px;align-items:center;margin:8px 0;font-weight:600;color:#173b59}
-.mxa-settings .mxa-table td{vertical-align:middle;padding:6px 6px}.mxa-settings .mxa-table .mxa-input{width:100%}
-.mxa-settings sw-card,.mxa-settings .sw-card{margin-bottom:16px}
-.mxa-savebar{position:sticky;bottom:0;display:flex;gap:10px;padding:12px 0;background:linear-gradient(transparent,#f0f2f5 30%)}
-.mxa-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
-.mxa-stat{background:#fff;border:1px solid #d9e2ee;border-top:3px solid #27832a;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column}
-.mxa-stat span{font-size:12px;color:#52667a;text-transform:uppercase;letter-spacing:.04em}
-.mxa-stat strong{font-size:28px;line-height:1.2;color:#043477}
-.mxa-stat small{color:#52667a}
-.mxa-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}
-.mxa-input{padding:8px 10px;border:1px solid #c5d0dc;border-radius:6px;background:#fff;min-height:38px;font:inherit}
-.mxa-toolbar .mxa-input[type=search]{flex:1;min-width:220px}
-.mxa-select{min-width:200px}.mxa-date{margin-left:6px}
-.mxa-count{color:#52667a;font-size:13px}
-.mxa-table{width:100%;border-collapse:collapse}
-.mxa-table th{text-align:left;font-size:12px;color:#52667a;padding:8px;border-bottom:2px solid #d9e2ee;white-space:nowrap}
-.mxa-table td{padding:10px 8px;border-bottom:1px solid #e6edf6;vertical-align:top}
-.mxa-table--small td{padding:7px 6px;font-size:13px}
-.mxa-sort{cursor:pointer;user-select:none}.mxa-sort:hover{color:#043477}
-.mxa-r{text-align:right!important;white-space:nowrap}
-.mxa-click{cursor:pointer}.mxa-click:hover,.mxa-click:focus{background:#f4f8fd;outline:none}
-.mxa-badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:#eef2f6;color:#52667a;margin:2px 4px 2px 0}
-.mxa-badge--ok{background:#e3f4e4;color:#1b6b1f}.mxa-badge--bad{background:#fde7e5;color:#b3261e}.mxa-badge--lvl{background:#e6eefb;color:#0649a8}
-.mxa-plus{color:#1f7a22;font-weight:700}.mxa-minus{color:#b3261e;font-weight:700}
-.mxa-empty,.mxa-hint{color:#52667a}
-.mxa-pager{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:14px}
-.mxa-pre{background:#f4f8fd;padding:10px;border-radius:6px;white-space:pre-wrap;max-height:260px;overflow:auto}
-.mxa-overlay{position:fixed;inset:0;background:rgba(4,52,119,.35);z-index:1000;display:flex;justify-content:flex-end}
-.mxa-drawer{width:min(560px,100%);height:100%;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.2);overflow-y:auto;padding:20px 22px}
-.mxa-dhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.mxa-dhead h3{margin:0 0 2px;font-size:20px;color:#043477}
-.mxa-sub{color:#52667a;font-size:13px}
-.mxa-x{border:0;background:none;font-size:30px;line-height:1;cursor:pointer;color:#52667a;min-width:40px;min-height:40px}
-.mxa-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0 8px}
-.mxa-kpis div{background:#f4f8fd;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column}
-.mxa-kpis span{font-size:11px;color:#52667a;text-transform:uppercase}.mxa-kpis strong{font-size:22px;color:#043477}.mxa-kpis small{color:#52667a}
-.mxa-bar{height:8px;background:#dbe6f3;border-radius:999px;overflow:hidden;margin-bottom:10px}.mxa-bar span{display:block;height:100%;background:#27832a}
-.mxa-links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
-.mxa-book{border:1px solid #d9e2ee;border-radius:10px;padding:12px 14px;margin:14px 0}
-.mxa-book h4,.mxa-drawer h4{margin:14px 0 8px;font-size:14px;color:#043477}.mxa-book h4{margin-top:0}
-.mxa-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
-.mxa-chip{border:1px solid #c5d0dc;background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer;font:inherit}.mxa-chip:hover{background:#f4f8fd}
-.mxa-row{display:flex;gap:8px;margin-bottom:8px}.mxa-pts{flex:0 0 140px}.mxa-row select{flex:1}
-.mxa-full{width:100%;margin-bottom:8px}
-.mxa-preview{margin:4px 0 10px;color:#173b59}
-@media (max-width:700px){.mxa-row{flex-direction:column}.mxa-pts{flex:1}}
+.bpa-about-hero{text-align:center;padding:10px 0 4px}.bpa-about-hero h3{margin:6px 0 0;font-size:22px;color:#1e3a8a}
+.bpa-egg{border:0;background:#dcfce7;color:#16803c;width:92px;height:92px;border-radius:50%;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:transform .15s}
+.bpa-egg:hover{transform:scale(1.06)}.bpa-egg:active{transform:scale(.94)}
+.bpa-about-text{max-width:640px;margin:12px auto;text-align:center;color:#1f2d3d;line-height:1.55}
+.bpa-credits{max-width:640px;margin:16px auto;display:grid;gap:8px}
+.bpa-credits div{background:#f3f6fb;border-radius:8px;padding:10px 14px;display:flex;flex-direction:column}
+.bpa-credits span{font-size:12px;color:#5b6b7b;text-transform:uppercase;letter-spacing:.04em}.bpa-credits strong{color:#1e3a8a}
+.bpa-credits a{color:#1d4ed8}.bpa-copy{text-align:center;color:#5b6b7b;font-size:13px;margin:14px 0 4px}
+.bpa-about-foot{text-align:center;font-weight:700;color:#166534}.bpa-about .bpa-hint{text-align:center}
+.bpa-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid #b6c3d1;background:#fff;color:#1b2a3a;border-radius:6px;padding:8px 14px;min-height:38px;font:inherit;font-weight:600;cursor:pointer}
+.bpa-btn:hover:not(:disabled){background:#f3f6fb;border-color:#1d4ed8}
+.bpa-btn:disabled{opacity:.5;cursor:not-allowed}
+.bpa-btn--primary{background:#1d4ed8;border-color:#1d4ed8;color:#fff}.bpa-btn--primary:hover:not(:disabled){background:#1e3a8a;border-color:#1e3a8a}
+.bpa-btn--small{padding:4px 10px;min-height:30px;font-size:13px}
+.bpa-tabs{display:flex;gap:4px;margin-bottom:14px;border-bottom:2px solid #d9e2ee}
+.bpa-tabs button{border:0;background:none;padding:10px 18px;font:inherit;font-weight:600;color:#5b6b7b;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px}
+.bpa-tabs button.is-on{color:#1d4ed8;border-bottom-color:#1d4ed8}
+.bpa-settings .bpa-field{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-weight:600;color:#1f2d3d}
+.bpa-settings .bpa-field small{font-weight:400;color:#5b6b7b}
+.bpa-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:4px 18px}
+.bpa-color{width:64px;height:38px;padding:2px;border:1px solid #c5d0dc;border-radius:6px;background:#fff}
+.bpa-check{display:flex;gap:8px;align-items:center;margin:8px 0;font-weight:600;color:#1f2d3d}
+.bpa-settings .bpa-table td{vertical-align:middle;padding:6px 6px}.bpa-settings .bpa-table .bpa-input{width:100%}
+.bpa-settings sw-card,.bpa-settings .sw-card{margin-bottom:16px}
+.bpa-savebar{position:sticky;bottom:0;display:flex;gap:10px;padding:12px 0;background:linear-gradient(transparent,#f0f2f5 30%)}
+.bpa-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px}
+.bpa-stat{background:#fff;border:1px solid #d9e2ee;border-top:3px solid #16803c;border-radius:8px;padding:12px 14px;display:flex;flex-direction:column}
+.bpa-stat span{font-size:12px;color:#5b6b7b;text-transform:uppercase;letter-spacing:.04em}
+.bpa-stat strong{font-size:28px;line-height:1.2;color:#1e3a8a}
+.bpa-stat small{color:#5b6b7b}
+.bpa-toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0 12px}
+.bpa-input{padding:8px 10px;border:1px solid #c5d0dc;border-radius:6px;background:#fff;min-height:38px;font:inherit}
+.bpa-toolbar .bpa-input[type=search]{flex:1;min-width:220px}
+.bpa-select{min-width:200px}.bpa-date{margin-left:6px}
+.bpa-count{color:#5b6b7b;font-size:13px}
+.bpa-table{width:100%;border-collapse:collapse}
+.bpa-table th{text-align:left;font-size:12px;color:#5b6b7b;padding:8px;border-bottom:2px solid #d9e2ee;white-space:nowrap}
+.bpa-table td{padding:10px 8px;border-bottom:1px solid #e6edf6;vertical-align:top}
+.bpa-table--small td{padding:7px 6px;font-size:13px}
+.bpa-sort{cursor:pointer;user-select:none}.bpa-sort:hover{color:#1e3a8a}
+.bpa-r{text-align:right!important;white-space:nowrap}
+.bpa-click{cursor:pointer}.bpa-click:hover,.bpa-click:focus{background:#f3f6fb;outline:none}
+.bpa-badge{display:inline-block;font-size:12px;font-weight:600;padding:2px 9px;border-radius:999px;background:#eef2f6;color:#5b6b7b;margin:2px 4px 2px 0}
+.bpa-badge--ok{background:#dcfce7;color:#166534}.bpa-badge--bad{background:#fde7e5;color:#b3261e}.bpa-badge--lvl{background:#e5edff;color:#1d4ed8}
+.bpa-plus{color:#16803c;font-weight:700}.bpa-minus{color:#b3261e;font-weight:700}
+.bpa-empty,.bpa-hint{color:#5b6b7b}
+.bpa-pager{display:flex;gap:12px;align-items:center;justify-content:center;margin-top:14px}
+.bpa-pre{background:#f3f6fb;padding:10px;border-radius:6px;white-space:pre-wrap;max-height:260px;overflow:auto}
+.bpa-overlay{position:fixed;inset:0;background:rgba(4,52,119,.35);z-index:1000;display:flex;justify-content:flex-end}
+.bpa-drawer{width:min(560px,100%);height:100%;background:#fff;box-shadow:-8px 0 30px rgba(0,0,0,.2);overflow-y:auto;padding:20px 22px}
+.bpa-dhead{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.bpa-dhead h3{margin:0 0 2px;font-size:20px;color:#1e3a8a}
+.bpa-sub{color:#5b6b7b;font-size:13px}
+.bpa-x{border:0;background:none;font-size:30px;line-height:1;cursor:pointer;color:#5b6b7b;min-width:40px;min-height:40px}
+.bpa-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0 8px}
+.bpa-kpis div{background:#f3f6fb;border-radius:8px;padding:10px 12px;display:flex;flex-direction:column}
+.bpa-kpis span{font-size:11px;color:#5b6b7b;text-transform:uppercase}.bpa-kpis strong{font-size:22px;color:#1e3a8a}.bpa-kpis small{color:#5b6b7b}
+.bpa-bar{height:8px;background:#dbe6f3;border-radius:999px;overflow:hidden;margin-bottom:10px}.bpa-bar span{display:block;height:100%;background:#16803c}
+.bpa-links{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}
+.bpa-book{border:1px solid #d9e2ee;border-radius:10px;padding:12px 14px;margin:14px 0}
+.bpa-book h4,.bpa-drawer h4{margin:14px 0 8px;font-size:14px;color:#1e3a8a}.bpa-book h4{margin-top:0}
+.bpa-quick{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.bpa-chip{border:1px solid #c5d0dc;background:#fff;border-radius:999px;padding:4px 12px;cursor:pointer;font:inherit}.bpa-chip:hover{background:#f3f6fb}
+.bpa-row{display:flex;gap:8px;margin-bottom:8px}.bpa-pts{flex:0 0 140px}.bpa-row select{flex:1}
+.bpa-full{width:100%;margin-bottom:8px}
+.bpa-preview{margin:4px 0 10px;color:#1f2d3d}
+@media (max-width:700px){.bpa-row{flex-direction:column}.bpa-pts{flex:1}}
 `;
 
-    Shopware.Component.register('maxxpet-bonus-index', {
+    Shopware.Component.register('bonus-points-index', {
         template: TEMPLATE,
         mixins: [Shopware.Mixin.getByName('notification')],
         data: function () {
@@ -419,9 +428,9 @@ var ABOUT_TPL = `
         methods: {
             fmt: fmt, euro: euro, dt: dt,
             addStyle: function () {
-                if (document.getElementById('mxa-style')) { return; }
+                if (document.getElementById('bpa-style')) { return; }
                 var s = document.createElement('style');
-                s.id = 'mxa-style';
+                s.id = 'bpa-style';
                 s.textContent = STYLE;
                 document.head.appendChild(s);
             },
@@ -500,7 +509,7 @@ var ABOUT_TPL = `
                 cv.width = window.innerWidth;
                 cv.height = window.innerHeight;
                 document.body.appendChild(cv);
-                var ctx = cv.getContext('2d'), colors = ['#0649a8', '#27832a', '#35a936', '#e7f1fa', '#f5b700'], parts = [], i;
+                var ctx = cv.getContext('2d'), colors = ['#1d4ed8', '#16803c', '#35a936', '#e7f1fa', '#f5b700'], parts = [], i;
                 for (i = 0; i < 160; i++) {
                     parts.push({ x: cv.width / 2, y: cv.height / 3, vx: (Math.random() - 0.5) * 16, vy: Math.random() * -14 - 4, s: 5 + Math.random() * 7, c: colors[i % colors.length], r: Math.random() * 6, vr: (Math.random() - 0.5) * 0.4 });
                 }
@@ -523,12 +532,12 @@ var ABOUT_TPL = `
                 if (!this.cfgLoaded) { this.loadSettings(); }
             },
             loadSettings: function () {
-                var me = this, P = 'MaxxpetBonus.config.';
-                http().get('/_action/system-config', { headers: headers(), params: { domain: 'MaxxpetBonus.config' } })
+                var me = this, P = 'BonusPoints.config.';
+                http().get('/_action/system-config', { headers: headers(), params: { domain: 'BonusPoints.config' } })
                     .then(function (r) {
                         var c = {}, k;
                         for (k in r.data) { if (k.indexOf(P) === 0) { c[k.slice(P.length)] = r.data[k]; } }
-                        var def = { active: true, enrollment: 'auto', customerGroupIds: [], pointsPerEuro: 1, pointValue: 0.03, lockDays: 0, minRedeem: 100, minOrderValue: 0, maxRedeemPercent: 0, combineWithLevelDiscount: true, levelModel: 'lifetime', pointsRegistration: 0, pointsNewsletter: 0, pointsReview: 0, pointsBirthday: 0, referralEnabled: false, referralPointsPerEuro: 0.5, referralWelcome: 0 };
+                        var def = { active: true, enrollment: 'auto', customerGroupIds: [], pointsPerEuro: 1, pointValue: 0.03, lockDays: 0, minRedeem: 100, minOrderValue: 0, maxRedeemPercent: 0, combineWithLevelDiscount: true, levelModel: 'lifetime', pointsRegistration: 0, pointsNewsletter: 0, pointsReview: 0, pointsBirthday: 0, referralEnabled: false, referralPointsPerEuro: 0.5, referralWelcome: 0, colorPrimary: '#1d4ed8', colorAccent: '#16803c' };
                         for (k in def) { if (c[k] === undefined || c[k] === null || c[k] === '') { c[k] = def[k]; } }
                         if (!Array.isArray(c.customerGroupIds)) { c.customerGroupIds = []; }
                         me.cfg = c;
@@ -575,7 +584,7 @@ var ABOUT_TPL = `
             },
             clean: function (s) { return String(s || '').replace(/[;\r\n]/g, ' ').trim(); },
             saveSettings: function () {
-                var me = this, c = me.cfg, P = 'MaxxpetBonus.config.';
+                var me = this, c = me.cfg, P = 'BonusPoints.config.';
                 function num(v, d) { var n = Number(v); return isFinite(n) && v !== '' && v !== null ? n : d; }
                 var levels = [];
                 if (c.levelModel !== 'off') {
@@ -616,6 +625,8 @@ var ABOUT_TPL = `
                 payload[P + 'referralPointsPerEuro'] = Math.max(0, num(c.referralPointsPerEuro, 0.5));
                 payload[P + 'referralWelcome'] = Math.max(0, Math.round(num(c.referralWelcome, 0)));
                 payload[P + 'giftRules'] = gifts.join('\n');
+                payload[P + 'colorPrimary'] = /^#[0-9a-fA-F]{6}$/.test(c.colorPrimary) ? c.colorPrimary : '#1d4ed8';
+                payload[P + 'colorAccent'] = /^#[0-9a-fA-F]{6}$/.test(c.colorAccent) ? c.colorAccent : '#16803c';
                 me.saving = true;
                 http().post('/_action/system-config', payload, { headers: headers() })
                     .then(function () { me.createNotificationSuccess({ message: 'Einstellungen gespeichert.' }); me.load(me.page); })
@@ -652,26 +663,26 @@ var ABOUT_TPL = `
         }
     });
 
-    Shopware.Module.register('maxxpet-bonus', {
+    Shopware.Module.register('bonus-points', {
         type: 'plugin',
-        name: 'maxxpet-bonus',
+        name: 'bonus-points',
         title: 'Bonuspunkte',
         description: 'Treuepunkte, Level und Empfehlungen verwalten',
-        color: '#27832a',
+        color: '#16803c',
         icon: 'regular-star',
         routes: {
             index: {
-                component: 'maxxpet-bonus-index',
+                component: 'bonus-points-index',
                 path: 'index',
                 meta: { parentPath: 'sw.marketing.index' }
             }
         },
         navigation: [{
-            id: 'maxxpet-bonus',
+            id: 'bonus-points',
             label: 'Bonuspunkte',
-            color: '#27832a',
+            color: '#16803c',
             icon: 'regular-star',
-            path: 'maxxpet.bonus.index',
+            path: 'bonus.points.index',
             parent: 'sw-marketing',
             position: 100
         }]

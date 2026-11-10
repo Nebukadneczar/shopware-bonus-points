@@ -1,15 +1,15 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Command;
+namespace BonusPoints\Command;
 
-use MaxxpetBonus\Service\AdminService;
+use BonusPoints\Service\AdminService;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
-#[AsCommand(name: 'maxxpet:bonus:abgleich', description: 'Schreibt Punkte für bezahlte Bestellungen nach, die noch keine Buchung haben (Standard: nur Vorschau)')]
+#[AsCommand(name: 'bonus-points:abgleich', description: 'Schreibt Punkte für bezahlte Bestellungen nach, die noch keine Buchung haben (Standard: nur Vorschau)')]
 class AbgleichCommand extends Command
 {
     public function __construct(private readonly AdminService $admin)

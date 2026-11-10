@@ -1,0 +1,181 @@
+{#
+  Punkte-Box für Warenkorb, Kasse und Off-Canvas.
+  Erwartet: bp (Seiten-Erweiterung bonusPoints), bpMode ('cart' | 'confirm' | 'offcanvas'), bpRedirect (Routenname).
+#}
+{% set cur = bp.get('currency')|default('EUR') %}
+{% set bpPrimary = config('BonusPoints.config.colorPrimary') %}
+{% if not (bpPrimary matches '/^#[0-9a-fA-F]{6}$/') %}{% set bpPrimary = '#1d4ed8' %}{% endif %}
+{% set bpAccent = config('BonusPoints.config.colorAccent') %}
+{% if not (bpAccent matches '/^#[0-9a-fA-F]{6}$/') %}{% set bpAccent = '#16803c' %}{% endif %}
+
+<div class="checkout-aside-action bpc bpc--{{ bpMode }}" style="--bp-primary: {{ bpPrimary }}; --bp-accent: {{ bpAccent }}">
+
+    {% if not bp.get('loggedIn') %}
+        {% if bp.get('earn') > 0 %}
+            <div class="bpc__head"><span class="bpc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg></span><span class="bpc__title">Punkte sammeln</span></div>
+            <p class="bpc__text">Mit Kundenkonto sammelst du mit dieser Bestellung <span class="bpc__pill">+{{ bp.get('earn')|number_format(0, ',', '.') }} Punkte</span></p>
+            <a class="bpc__link" href="{{ path('frontend.account.login.page') }}">Jetzt anmelden oder Konto anlegen</a>
+        {% endif %}
+
+    {% elseif not bp.get('participant') %}
+        {% if bp.get('canJoin') %}
+            <div class="bpc__head"><span class="bpc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg></span><span class="bpc__title">Bonusprogramm</span></div>
+            {% if bpMode == 'confirm' %}
+                <div class="form-check">
+                    <input type="checkbox" class="form-check-input" id="bpc-join" name="bonusPointsJoin" value="1" form="confirmOrderForm">
+                    <label class="form-check-label" for="bpc-join">Ich möchte am Bonusprogramm teilnehmen und mit dieser Bestellung Punkte sammeln.</label>
+                </div>
+            {% else %}
+                <form action="{{ path('frontend.bonus_points.join') }}" method="post">
+                    <input type="hidden" name="redirectTo" value="{{ bpRedirect }}">
+                    <p class="bpc__text">Nimm am Bonusprogramm teil und sammle Punkte für jede Bestellung.</p>
+                    <button type="submit" class="btn btn-primary">Am Bonusprogramm teilnehmen</button>
+                </form>
+            {% endif %}
+        {% endif %}
+
+    {% else %}
+        <div class="bpc__head">
+            <span class="bpc__icon" aria-hidden="true"><svg viewBox="0 0 24 24" width="20" height="20"><path fill="currentColor" d="M12 2l2.9 6.3 6.9.8-5.1 4.7 1.4 6.8L12 17.3 5.9 20.6l1.4-6.8L2.2 9.1l6.9-.8z"/></svg></span>
+            <span class="bpc__title">Meine Punkte</span>
+            {% if bp.get('levelsOn') and bpMode != 'offcanvas' %}<span class="bpc__lvl">{{ bp.get('level') }}</span>{% endif %}
+        </div>
+
+        {% if bp.get('redeemed') > 0 %}
+            <div class="bpc__balance">
+                <span class="bpc__big">−{{ bp.get('redeemedAmount')|currency }}</span>
+                <span class="bpc__sub">{{ bp.get('redeemed')|number_format(0, ',', '.') }} Punkte eingelöst</span>
+            </div>
+        {% else %}
+            <div class="bpc__balance">
+                <span class="bpc__big">{{ bp.get('available')|number_format(0, ',', '.') }}<span class="bpc__unit"> Punkte</span></span>
+                <span class="bpc__sub">{% if bp.get('available') > 0 %}{{ bp.get('availableValue')|currency }} Guthaben{% else %}noch kein Guthaben{% endif %}</span>
+            </div>
+        {% endif %}
+
+        {% if bpMode == 'offcanvas' %}
+            {% if bp.get('canRedeem') and bp.get('redeemed') == 0 %}
+                <form action="{{ path('frontend.bonus_points.redeem') }}" method="post">
+                    <input type="hidden" name="redirectTo" value="frontend.checkout.cart.page">
+                    <input type="hidden" name="points" value="{{ bp.get('max') }}">
+                    <button type="submit" name="action" value="redeem" class="btn btn-outline-primary btn-sm bpc__btn">{{ bp.get('max')|number_format(0, ',', '.') }} Punkte einlösen</button>
+                </form>
+            {% endif %}
+        {% else %}
+            {% if bp.get('belowMinOrder') and bp.get('available') >= bp.get('min') %}
+                <p class="bpc__hint">Punkte kannst du ab einem Warenwert von {{ bp.get('minOrderValue')|currency }} einlösen. Dir fehlen noch <strong>{{ bp.get('missingToMinOrder')|currency }}</strong>.</p>
+            {% elseif bp.get('canRedeem') or bp.get('redeemed') > 0 %}
+                {% set startVal = bp.get('redeemed') > 0 ? bp.get('redeemed') : bp.get('max') %}
+                <form class="bpc__form" action="{{ path('frontend.bonus_points.redeem') }}" method="post"
+                      data-unit="{{ bp.get('unit') }}" data-cur="{{ cur }}">
+                    <input type="hidden" name="redirectTo" value="{{ bpRedirect }}">
+                    <label class="bpc__label" for="bpc-points-{{ bpMode }}">Wie viele Punkte möchtest du einlösen?</label>
+                    <div class="bpc__row">
+                        <input type="number" class="form-control bpc__num" id="bpc-points-{{ bpMode }}" name="points" inputmode="numeric"
+                               min="{{ bp.get('min') }}" max="{{ bp.get('max') }}" step="1" value="{{ startVal }}">
+                        <span class="bpc__eur" aria-live="polite"></span>
+                    </div>
+                    <input type="range" class="bpc__range" aria-label="Punkte einlösen"
+                           min="{{ bp.get('min') }}" max="{{ bp.get('max') }}" step="1" value="{{ startVal }}">
+                    <div class="bpc__btns">
+                        <button type="submit" name="action" value="redeem" class="btn btn-primary">{{ bp.get('redeemed') > 0 ? 'Ändern' : 'Punkte einlösen' }}</button>
+                        {% if bp.get('redeemed') > 0 %}
+                            <button type="submit" name="action" value="remove" class="btn btn-link">Entfernen</button>
+                        {% endif %}
+                    </div>
+                </form>
+            {% elseif bp.get('available') > 0 %}
+                <p class="bpc__hint">Einlösen ist ab {{ bp.get('min')|number_format(0, ',', '.') }} Punkten möglich.</p>
+            {% endif %}
+
+            {% if bp.get('levelsOn') and bp.get('levelDiscountPct') > 0 %}
+                <p class="bpc__hint">Dein Treuerabatt als Level {{ bp.get('level') }}: <strong>{{ bp.get('levelDiscountPct')|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} %</strong>.
+                    {% if not bp.get('combine') %}Mit eingelösten Punkten entfällt der Treuerabatt, du kannst dich für eines von beiden entscheiden.{% endif %}</p>
+            {% endif %}
+
+            {% if bp.get('giftChoices')|length %}
+                <form class="bpc__gift" action="{{ path('frontend.bonus_points.gift') }}" method="post">
+                    <input type="hidden" name="redirectTo" value="{{ bpRedirect }}">
+                    <p class="bpc__label">Dein Gratisprodukt zur Auswahl:</p>
+                    {% for g in bp.get('giftChoices') %}
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="sku" id="bpc-gift-{{ bpMode }}-{{ loop.index }}" value="{{ g.sku }}"{% if g.sku == bp.get('giftSelected') %} checked{% endif %}>
+                            <label class="form-check-label" for="bpc-gift-{{ bpMode }}-{{ loop.index }}">{{ g.label }}</label>
+                        </div>
+                    {% endfor %}
+                    <div class="bpc__btns">
+                        <button type="submit" name="action" value="choose" class="btn btn-outline-primary btn-sm">Auswählen</button>
+                        {% if bp.get('giftSelected') %}<button type="submit" name="action" value="remove" class="btn btn-link btn-sm">Entfernen</button>{% endif %}
+                    </div>
+                </form>
+            {% endif %}
+
+            {% if bp.get('giftNext') %}
+                <p class="bpc__hint">Noch <strong>{{ bp.get('giftNext').missing|currency }}</strong> bis zum Gratisprodukt „{{ bp.get('giftNext').label }}“.</p>
+            {% endif %}
+
+            {% if bp.get('levelsOn') and bp.get('levelNext') %}
+                <div class="bpc__progress">
+                    <div class="bpc__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ bp.get('levelProgress') }}" aria-label="Fortschritt zum nächsten Level"><span style="width: {{ bp.get('levelProgress') }}%"></span></div>
+                    <small>Noch {{ bp.get('levelMissing')|number_format(0, ',', '.') }} Punkte bis Level {{ bp.get('levelNext') }}</small>
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% if bp.get('earn') > 0 %}
+            <p class="bpc__earn">Mit dieser Bestellung sammelst du <span class="bpc__pill">+{{ bp.get('earn')|number_format(0, ',', '.') }} Punkte</span></p>
+        {% endif %}
+    {% endif %}
+</div>
+
+<style>
+    .bpc{--bp-primary-dark:color-mix(in srgb,var(--bp-primary) 78%,#000);--bp-accent-dark:color-mix(in srgb,var(--bp-accent) 82%,#000);--bp-accent-soft:color-mix(in srgb,var(--bp-accent) 14%,#fff);--bp-soft:color-mix(in srgb,var(--bp-primary) 6%,#fff);--bp-track:color-mix(in srgb,var(--bp-primary) 14%,#fff);--bp-text:#1f2d3d;margin:0 0 14px;padding:14px 16px;border:1px solid #d9e2ee;border-radius:14px;background:var(--bp-soft);color:var(--bp-text);box-shadow:0 1px 2px rgba(23,59,89,.05)}
+    .bpc__head{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+    .bpc__icon{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--bp-accent);color:#fff;flex:none}
+    .bpc__title{font-weight:800;color:var(--bp-primary-dark);font-size:1.05rem}
+    .bpc__lvl{margin-left:auto;padding:2px 10px;border-radius:999px;background:var(--bp-accent-soft);color:var(--bp-accent-dark);font-size:.8rem;font-weight:800}
+    .bpc__balance{display:flex;flex-direction:column;margin:0 0 10px}
+    .bpc__big{font-size:1.9rem;line-height:1.1;font-weight:800;color:var(--bp-primary-dark)}
+    .bpc__unit{font-size:1rem;font-weight:700;color:#4a6378}
+    .bpc__sub{font-size:.9rem;color:#4a6378}
+    .bpc__text,.bpc__hint{margin:0 0 8px;font-size:.92rem}
+    .bpc__link{font-weight:700;color:var(--bp-primary)}
+    .bpc__pill{display:inline-block;padding:2px 10px;border-radius:999px;background:var(--bp-accent-soft);color:var(--bp-accent-dark);font-weight:800;white-space:nowrap}
+    .bpc__earn{margin:10px 0 0;padding-top:10px;border-top:1px solid #d9e2ee;font-size:.92rem}
+    .bpc__label{display:block;margin:8px 0 4px;font-size:.9rem;font-weight:700}
+    .bpc__row{display:flex;align-items:center;gap:10px}
+    .bpc__num{max-width:120px}
+    .bpc__eur{font-weight:800;color:var(--bp-accent)}
+    .bpc__range{width:100%;min-height:28px;margin:10px 0 6px;accent-color:var(--bp-accent)}
+    .bpc__btns{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .bpc__gift{margin-top:10px;padding-top:8px;border-top:1px solid #d9e2ee}
+    .bpc__progress{margin-top:10px}
+    .bpc__progress small{display:block;margin-top:4px;color:#4a6378}
+    .bpc__bar{height:8px;overflow:hidden;border-radius:999px;background:var(--bp-track)}
+    .bpc__bar span{display:block;height:100%;border-radius:999px;background:var(--bp-accent)}
+    .bpc--offcanvas{margin:0 0 12px;padding:12px 14px}
+    .bpc--offcanvas .bpc__big{font-size:1.5rem}
+    .bpc__btn{margin-top:2px}
+</style>
+
+{% if bpMode != 'offcanvas' %}
+    <script>
+        (function () {
+            document.querySelectorAll('.bpc__form').forEach(function (f) {
+                if (f.dataset.ready) return;
+                f.dataset.ready = '1';
+                var n = f.querySelector('.bpc__num'), r = f.querySelector('.bpc__range'), e = f.querySelector('.bpc__eur');
+                var unit = parseFloat(f.dataset.unit) || 0.03, min = parseInt(n.min, 10), max = parseInt(n.max, 10);
+                function eur() {
+                    var v = parseInt(n.value, 10) || 0;
+                    try { e.textContent = '= ' + (v * unit).toLocaleString('de-DE', { style: 'currency', currency: f.dataset.cur || 'EUR' }); }
+                    catch (x) { e.textContent = '= ' + (v * unit).toFixed(2) + ' €'; }
+                }
+                r.addEventListener('input', function () { n.value = r.value; eur(); });
+                n.addEventListener('input', function () { var v = parseInt(n.value, 10); if (!isNaN(v)) { r.value = Math.max(min, Math.min(max, v)); } eur(); });
+                n.addEventListener('change', function () { var v = parseInt(n.value, 10) || min; v = Math.max(min, Math.min(max, v)); n.value = v; r.value = v; eur(); });
+                eur();
+            });
+        })();
+    </script>
+{% endif %}

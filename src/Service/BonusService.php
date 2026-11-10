@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Service;
+namespace BonusPoints\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
@@ -13,7 +13,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class BonusService
 {
-    public const CFG = 'MaxxpetBonus.config.';
+    public const CFG = 'BonusPoints.config.';
 
     /** Buchungsarten, die Punkte ausgeben oder zurückgeben. Sie zählen nicht für den Status (das Level). */
     public const SPEND_TYPES = ['redeem', 'redeem_refund'];
@@ -217,7 +217,7 @@ class BonusService
                 COALESCE(SUM(CASE WHEN available_at <= :now1 THEN points ELSE 0 END), 0) AS available,
                 COALESCE(SUM(CASE WHEN available_at > :now2 THEN points ELSE 0 END), 0) AS pending,
                 COALESCE(SUM(CASE WHEN available_at <= :now3 AND type NOT IN (' . $spend . ')' . $since . ' THEN points ELSE 0 END), 0) AS status
-             FROM maxxpet_bonus_entry WHERE customer_id = :c',
+             FROM bonus_points_entry WHERE customer_id = :c',
             $params
         ) ?: ['available' => 0, 'pending' => 0, 'status' => 0];
 
@@ -238,7 +238,7 @@ class BonusService
     {
         $rows = $this->db->fetchAllAssociative(
             'SELECT type, points, order_number, LOWER(HEX(order_id)) AS order_id, reason, available_at, created_at
-             FROM maxxpet_bonus_entry WHERE customer_id = :c
+             FROM bonus_points_entry WHERE customer_id = :c
              ORDER BY created_at DESC, available_at DESC LIMIT ' . max(1, min(500, $limit)),
             ['c' => Uuid::fromHexToBytes($customerId)]
         );
@@ -329,7 +329,7 @@ class BonusService
 
         // Wurde die Bestellung schon abgerechnet oder zurückgebucht, nichts mehr gutschreiben
         $already = $this->db->fetchOne(
-            'SELECT COUNT(*) FROM maxxpet_bonus_entry WHERE order_id = :o AND type IN (\'order\', \'order_reversal\')',
+            'SELECT COUNT(*) FROM bonus_points_entry WHERE order_id = :o AND type IN (\'order\', \'order_reversal\')',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if ((int) $already > 0) {
@@ -357,7 +357,7 @@ class BonusService
     {
         $e = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(customer_id)) AS customer_id, points, order_number, available_at
-             FROM maxxpet_bonus_entry WHERE order_id = :o AND type = \'order\'',
+             FROM bonus_points_entry WHERE order_id = :o AND type = \'order\'',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if (!$e) {
@@ -391,7 +391,7 @@ class BonusService
              INNER JOIN `order` o ON o.id = li.order_id AND o.version_id = li.order_version_id
              INNER JOIN order_customer oc ON oc.order_id = o.id AND oc.order_version_id = o.version_id
              LEFT JOIN customer c ON c.id = oc.customer_id
-             WHERE li.order_id = :o AND li.order_version_id = :v AND li.type = \'maxxpet_bonus\' LIMIT 1',
+             WHERE li.order_id = :o AND li.order_version_id = :v AND li.type = \'bonus_points\' LIMIT 1',
             ['o' => Uuid::fromHexToBytes($orderId), 'v' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION)]
         );
         if (!$row || empty($row['customer_id']) || (int) $row['guest'] === 1) {
@@ -426,7 +426,7 @@ class BonusService
     {
         $e = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(customer_id)) AS customer_id, points, order_number
-             FROM maxxpet_bonus_entry WHERE order_id = :o AND type = \'redeem\'',
+             FROM bonus_points_entry WHERE order_id = :o AND type = \'redeem\'',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if (!$e) {
@@ -473,7 +473,7 @@ class BonusService
     public function addEntry(string $customerId, string $type, int $points, ?string $reason, ?string $ref, ?string $orderId, ?string $orderNumber, \DateTimeImmutable $availableAt): bool
     {
         return (int) $this->db->executeStatement(
-            'INSERT IGNORE INTO maxxpet_bonus_entry
+            'INSERT IGNORE INTO bonus_points_entry
                 (id, customer_id, type, points, order_id, order_number, ref, reason, available_at, created_at)
              VALUES (:id, :c, :t, :p, :o, :n, :ref, :r, :a, :now)',
             [

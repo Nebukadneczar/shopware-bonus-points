@@ -180,4 +180,22 @@ Gold;2000;1.3;0</defaultValue>
             <defaultValue></defaultValue>
         </input-field>
     </card>
+    <card>
+        <title>Appearance</title>
+        <title lang="de-DE">Darstellung</title>
+        <input-field type="colorpicker">
+            <name>colorPrimary</name>
+            <label>Primary color</label>
+            <label lang="de-DE">Hauptfarbe</label>
+            <helpText lang="de-DE">Farbe für Überschriften und Links in der Punkte-Box und auf der Seite „Meine Punkte“.</helpText>
+            <defaultValue>#1d4ed8</defaultValue>
+        </input-field>
+        <input-field type="colorpicker">
+            <name>colorAccent</name>
+            <label>Accent color</label>
+            <label lang="de-DE">Akzentfarbe</label>
+            <helpText lang="de-DE">Farbe für Knöpfe, Symbole und den Fortschrittsbalken.</helpText>
+            <defaultValue>#16803c</defaultValue>
+        </input-field>
+    </card>
 </config>

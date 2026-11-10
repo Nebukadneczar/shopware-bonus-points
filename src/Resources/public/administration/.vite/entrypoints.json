@@ -1,11 +1,11 @@
 {
   "base": "/",
   "entryPoints": {
-    "maxxpet-bonus": {
+    "bonus-points": {
       "css": [],
       "dev": false,
       "js": [
-        "/bundles/maxxpetbonus/administration/assets/maxxpet-bonus.js?v=1.8.0"
+        "/bundles/bonuspoints/administration/assets/bonus-points.js?v=2.0.0"
       ],
       "legacy": false,
       "preload": []

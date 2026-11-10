@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Cart;
+namespace BonusPoints\Cart;
 
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\CartProcessorInterface;
@@ -20,8 +20,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
  */
 class BonusCartProcessor implements CartProcessorInterface
 {
-    public const TYPE = 'maxxpet_bonus';
-    public const ID = 'maxxpet-bonus';
+    public const TYPE = 'bonus_points';
+    public const ID = 'bonus-points';
 
     public function __construct(
         private readonly BonusService $bonus,

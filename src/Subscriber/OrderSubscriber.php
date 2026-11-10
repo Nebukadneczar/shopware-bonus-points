@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Subscriber;
+namespace BonusPoints\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
-use MaxxpetBonus\Service\ReferralService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
+use BonusPoints\Service\ReferralService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Cart\Event\CheckoutOrderPlacedEvent;
 use Shopware\Core\Defaults;
@@ -50,7 +50,7 @@ class OrderSubscriber implements EventSubscriberInterface
 
             // Beitritt über die Checkbox an der Kasse
             $request = $this->requestStack->getCurrentRequest();
-            if ($request !== null && $request->request->get('maxxpetBonusJoin')) {
+            if ($request !== null && $request->request->get('bonusPointsJoin')) {
                 $customerId = $order->getOrderCustomer()?->getCustomerId();
                 if ($customerId !== null && $this->bonus->isActive()) {
                     $this->members->join($customerId, 'checkout');
@@ -151,7 +151,7 @@ class OrderSubscriber implements EventSubscriberInterface
         try {
             $fn();
         } catch (\Throwable $e) {
-            $this->logger->error('MaxxpetBonus (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->error('BonusPoints (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Storefront\Controller;
+namespace BonusPoints\Storefront\Controller;
 
-use MaxxpetBonus\Cart\BonusCartProcessor;
-use MaxxpetBonus\Cart\GiftCartProcessor;
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
+use BonusPoints\Cart\BonusCartProcessor;
+use BonusPoints\Cart\GiftCartProcessor;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
 use Shopware\Core\Checkout\Cart\LineItem\LineItem;
 use Shopware\Core\Checkout\Cart\SalesChannel\CartService;
 use Shopware\Core\PlatformRequest;
@@ -22,7 +22,7 @@ use Symfony\Component\Routing\Attribute\Route;
 #[Route(defaults: ['_routeScope' => ['storefront']])]
 class RedeemController extends StorefrontController
 {
-    private const BACK_ROUTES = ['frontend.checkout.cart.page', 'frontend.checkout.confirm.page', 'frontend.account.maxxpet.bonus.page'];
+    private const BACK_ROUTES = ['frontend.checkout.cart.page', 'frontend.checkout.confirm.page', 'frontend.account.bonus_points.page'];
 
     public function __construct(
         private readonly CartService $cartService,
@@ -32,8 +32,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/maxxpet-bonus',
-        name: 'frontend.maxxpet.bonus.redeem',
+        path: '/checkout/bonus-points',
+        name: 'frontend.bonus_points.redeem',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']
@@ -85,8 +85,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/maxxpet-bonus/join',
-        name: 'frontend.maxxpet.bonus.join',
+        path: '/checkout/bonus-points/join',
+        name: 'frontend.bonus_points.join',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']
@@ -111,8 +111,8 @@ class RedeemController extends StorefrontController
     }
 
     #[Route(
-        path: '/checkout/maxxpet-bonus/gift',
-        name: 'frontend.maxxpet.bonus.gift',
+        path: '/checkout/bonus-points/gift',
+        name: 'frontend.bonus_points.gift',
         options: ['seo' => false],
         defaults: [PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true, PlatformRequest::ATTRIBUTE_NO_STORE => true],
         methods: ['POST']

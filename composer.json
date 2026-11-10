@@ -1,14 +1,14 @@
 {
-  "name": "maxxpet/maxxpet-bonus",
+  "name": "macdata/bonus-points",
   "description": "Bonus-System für Shopware 6.7: Treuepunkte, Stufen, Einlösen im Warenkorb, Gratisprodukte, Empfehlungen und Verwaltung im Admin",
   "type": "shopware-platform-plugin",
-  "version": "1.8.0",
+  "version": "2.0.0",
   "require": {
     "shopware/core": "~6.7.0",
     "shopware/storefront": "~6.7.0"
   },
   "extra": {
-    "shopware-plugin-class": "MaxxpetBonus\\MaxxpetBonus",
+    "shopware-plugin-class": "BonusPoints\\BonusPoints",
     "label": {
       "de-DE": "Bonus-System (Treuepunkte)",
       "en-GB": "Bonus System (Loyalty Points)"
@@ -21,7 +21,7 @@
   },
   "autoload": {
     "psr-4": {
-      "MaxxpetBonus\\": "src/"
+      "BonusPoints\\": "src/"
     }
   },
   "authors": [

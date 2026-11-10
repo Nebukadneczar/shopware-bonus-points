@@ -1,9 +1,9 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Cart;
+namespace BonusPoints\Cart;
 
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
 use Shopware\Core\Checkout\Cart\Cart;
 use Shopware\Core\Checkout\Cart\CartBehavior;
 use Shopware\Core\Checkout\Cart\CartProcessorInterface;
@@ -19,8 +19,8 @@ use Shopware\Core\System\SalesChannel\SalesChannelContext;
  */
 class LevelDiscountCartProcessor implements CartProcessorInterface
 {
-    public const TYPE = 'maxxpet_level_discount';
-    public const ID = 'maxxpet-level-discount';
+    public const TYPE = 'bonus_points_level_discount';
+    public const ID = 'bonus-points-level-discount';
 
     public function __construct(
         private readonly BonusService $bonus,

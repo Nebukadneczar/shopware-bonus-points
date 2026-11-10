@@ -1,13 +1,13 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Subscriber;
+namespace BonusPoints\Subscriber;
 
-use MaxxpetBonus\Cart\BonusCartProcessor;
-use MaxxpetBonus\Cart\GiftCartProcessor;
-use MaxxpetBonus\Cart\LevelDiscountCartProcessor;
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\GiftService;
-use MaxxpetBonus\Service\MemberService;
+use BonusPoints\Cart\BonusCartProcessor;
+use BonusPoints\Cart\GiftCartProcessor;
+use BonusPoints\Cart\LevelDiscountCartProcessor;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\GiftService;
+use BonusPoints\Service\MemberService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Framework\Struct\ArrayStruct;
 use Shopware\Storefront\Page\Checkout\Cart\CheckoutCartPageLoadedEvent;
@@ -16,7 +16,7 @@ use Shopware\Storefront\Page\Checkout\Offcanvas\OffcanvasCartPageLoadedEvent;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Liefert Warenkorb, Kasse und Off-Canvas die Werte für die Punkte-Box (Erweiterung „maxxpetBonus“).
+ * Liefert Warenkorb, Kasse und Off-Canvas die Werte für die Punkte-Box (Erweiterung „bonusPoints“).
  */
 class CartPageSubscriber implements EventSubscriberInterface
 {
@@ -127,7 +127,7 @@ class CartPageSubscriber implements EventSubscriberInterface
                 }
             }
 
-            $event->getPage()->addExtension('maxxpetBonus', new ArrayStruct([
+            $event->getPage()->addExtension('bonusPoints', new ArrayStruct([
                 'loggedIn' => $loggedIn,
                 'participant' => $participant,
                 'canJoin' => $canJoin,
@@ -157,7 +157,7 @@ class CartPageSubscriber implements EventSubscriberInterface
                 'currency' => $context->getCurrency()->getIsoCode(),
             ]));
         } catch (\Throwable $e) {
-            $this->logger->error('MaxxpetBonus (cart-page): ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->error('BonusPoints (cart-page): ' . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

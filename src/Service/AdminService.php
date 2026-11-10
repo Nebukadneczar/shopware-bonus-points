@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Service;
+namespace BonusPoints\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Defaults;
@@ -31,7 +31,7 @@ class AdminService
                 COALESCE(SUM(CASE WHEN type IN (\'redeem\', \'redeem_refund\') THEN -points ELSE 0 END), 0) AS redeemed,
                 COALESCE(SUM(points), 0) AS outstanding,
                 COUNT(DISTINCT customer_id) AS customers
-             FROM maxxpet_bonus_entry'
+             FROM bonus_points_entry'
         ) ?: [];
         $unit = $this->bonus->pointValue();
         $outstanding = (int) ($row['outstanding'] ?? 0);
@@ -44,8 +44,8 @@ class AdminService
             'outstandingEuro' => round($outstanding * $unit, 2),
             'redeemedEuro' => round((int) ($row['redeemed'] ?? 0) * $unit, 2),
             'customers' => (int) ($row['customers'] ?? 0),
-            'referrals' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM maxxpet_bonus_referral'),
-            'blocked' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM maxxpet_bonus_member WHERE status = \'blocked\''),
+            'referrals' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_referral'),
+            'blocked' => (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_member WHERE status = \'blocked\''),
             'pointValue' => $unit,
         ];
     }
@@ -75,12 +75,12 @@ class AdminService
             $like = '%' . addcslashes($search, '%_\\') . '%';
             $params['q'] = $params['q2'] = $params['q3'] = $like;
         } elseif ($filter !== 'all') {
-            $where .= ' AND (m.customer_id IS NOT NULL OR EXISTS (SELECT 1 FROM maxxpet_bonus_entry x WHERE x.customer_id = c.id))';
+            $where .= ' AND (m.customer_id IS NOT NULL OR EXISTS (SELECT 1 FROM bonus_points_entry x WHERE x.customer_id = c.id))';
         }
         if ($filter === 'blocked') {
             $where .= ' AND m.status = \'blocked\'';
         } elseif ($filter === 'referrers') {
-            $where .= ' AND EXISTS (SELECT 1 FROM maxxpet_bonus_referral r WHERE r.referrer_id = c.id)';
+            $where .= ' AND EXISTS (SELECT 1 FROM bonus_points_referral r WHERE r.referrer_id = c.id)';
         } elseif ($filter === 'positive') {
             $having = ' HAVING available > 0';
         }
@@ -89,8 +89,8 @@ class AdminService
                     COALESCE(SUM(CASE WHEN e.available_at <= :now1 THEN e.points ELSE 0 END), 0) AS available,
                     COALESCE(SUM(CASE WHEN e.available_at > :now2 THEN e.points ELSE 0 END), 0) AS pending
              FROM customer c
-             LEFT JOIN maxxpet_bonus_member m ON m.customer_id = c.id
-             LEFT JOIN maxxpet_bonus_entry e ON e.customer_id = c.id';
+             LEFT JOIN bonus_points_member m ON m.customer_id = c.id
+             LEFT JOIN bonus_points_entry e ON e.customer_id = c.id';
         $tail = ' WHERE ' . $where . '
              GROUP BY c.id, c.first_name, c.last_name, c.email, c.customer_number, m.status' . $having;
 
@@ -207,7 +207,7 @@ class AdminService
                AND EXISTS (SELECT 1 FROM order_transaction ot
                            INNER JOIN state_machine_state ts ON ts.id = ot.state_id
                            WHERE ot.order_id = o.id AND ot.version_id = o.version_id AND ts.technical_name = \'paid\')
-               AND NOT EXISTS (SELECT 1 FROM maxxpet_bonus_entry e WHERE e.order_id = o.id AND e.type IN (\'order\', \'order_reversal\'))
+               AND NOT EXISTS (SELECT 1 FROM bonus_points_entry e WHERE e.order_id = o.id AND e.type IN (\'order\', \'order_reversal\'))
              ORDER BY o.order_date_time',
             ['v' => Uuid::fromHexToBytes(Defaults::LIVE_VERSION), 'seit' => $since . ' 00:00:00']
         );

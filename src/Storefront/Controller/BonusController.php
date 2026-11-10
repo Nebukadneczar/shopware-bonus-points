@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Storefront\Controller;
+namespace BonusPoints\Storefront\Controller;
 
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
-use MaxxpetBonus\Service\ReferralService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
+use BonusPoints\Service\ReferralService;
 use Shopware\Core\PlatformRequest;
 use Shopware\Core\System\SalesChannel\SalesChannelContext;
 use Shopware\Storefront\Controller\StorefrontController;
@@ -30,7 +30,7 @@ class BonusController extends StorefrontController
 
     #[Route(
         path: '/account/bonus',
-        name: 'frontend.account.maxxpet.bonus.page',
+        name: 'frontend.account.bonus_points.page',
         options: ['seo' => false],
         defaults: [
             PlatformRequest::ATTRIBUTE_LOGIN_REQUIRED => true,
@@ -75,7 +75,7 @@ class BonusController extends StorefrontController
             }
         }
 
-        return $this->renderStorefront('@MaxxpetBonus/storefront/page/account/bonus/index.html.twig', [
+        return $this->renderStorefront('@BonusPoints/storefront/page/account/bonus/index.html.twig', [
             'page' => $page,
             'participant' => $participant,
             'canJoin' => !$participant && $this->members->enrollment() === 'optin' && $state['eligible'] && !$state['member'],

@@ -1,11 +1,11 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Subscriber;
+namespace BonusPoints\Subscriber;
 
 use Doctrine\DBAL\Connection;
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
-use MaxxpetBonus\Service\ReferralService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
+use BonusPoints\Service\ReferralService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Customer\Event\CustomerLoginEvent;
 use Shopware\Core\Checkout\Customer\Event\CustomerRegisterEvent;
@@ -23,7 +23,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
  */
 class CustomerSubscriber implements EventSubscriberInterface
 {
-    public const SESSION_REF = 'maxxpet_bonus_ref';
+    public const SESSION_REF = 'bonus_points_ref';
 
     public function __construct(
         private readonly BonusService $bonus,
@@ -77,14 +77,14 @@ class CustomerSubscriber implements EventSubscriberInterface
             $id = $customer->getId();
             $request = $this->requestStack->getCurrentRequest();
 
-            if ($request !== null && $request->request->get('maxxpetBonusJoin')) {
+            if ($request !== null && $request->request->get('bonusPointsJoin')) {
                 $this->members->join($id, 'register');
             }
 
             // Empfehlung: Code aus dem Formular oder aus dem Empfehlungslink
             $code = '';
             if ($request !== null) {
-                $code = (string) $request->request->get('maxxpetBonusRef', '');
+                $code = (string) $request->request->get('bonusPointsRef', '');
                 if ($code === '' && $request->hasSession()) {
                     $code = (string) $request->getSession()->get(self::SESSION_REF, '');
                 }
@@ -169,7 +169,7 @@ class CustomerSubscriber implements EventSubscriberInterface
         try {
             $fn();
         } catch (\Throwable $e) {
-            $this->logger->error('MaxxpetBonus (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
+            $this->logger->error('BonusPoints (' . $what . '): ' . $e->getMessage(), ['exception' => $e]);
         }
     }
 }

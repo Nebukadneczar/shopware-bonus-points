@@ -1,6 +1,6 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Service;
+namespace BonusPoints\Service;
 
 use Doctrine\DBAL\Connection;
 use Shopware\Core\Framework\Uuid\Uuid;
@@ -12,7 +12,7 @@ use Shopware\Core\System\SystemConfig\SystemConfigService;
  */
 class ReferralService
 {
-    private const CFG = 'MaxxpetBonus.config.';
+    private const CFG = 'BonusPoints.config.';
 
     public function __construct(
         private readonly Connection $db,
@@ -65,7 +65,7 @@ class ReferralService
         }
 
         $n = $this->db->executeStatement(
-            'INSERT IGNORE INTO maxxpet_bonus_referral (customer_id, referrer_id, created_at) VALUES (:c, :r, :n)',
+            'INSERT IGNORE INTO bonus_points_referral (customer_id, referrer_id, created_at) VALUES (:c, :r, :n)',
             [
                 'c' => Uuid::fromHexToBytes($newCustomerId),
                 'r' => Uuid::fromHexToBytes($referrerId),
@@ -90,7 +90,7 @@ class ReferralService
             return;
         }
         $referrer = $this->db->fetchOne(
-            'SELECT LOWER(HEX(referrer_id)) FROM maxxpet_bonus_referral WHERE customer_id = :c',
+            'SELECT LOWER(HEX(referrer_id)) FROM bonus_points_referral WHERE customer_id = :c',
             ['c' => Uuid::fromHexToBytes($o['customerId'])]
         );
         if (!\is_string($referrer) || $referrer === '' || !$this->members->isParticipant($referrer)) {
@@ -116,7 +116,7 @@ class ReferralService
     {
         $e = $this->db->fetchAssociative(
             'SELECT LOWER(HEX(customer_id)) AS customer_id, points, order_number, available_at
-             FROM maxxpet_bonus_entry WHERE order_id = :o AND type = \'referral\'',
+             FROM bonus_points_entry WHERE order_id = :o AND type = \'referral\'',
             ['o' => Uuid::fromHexToBytes($orderId)]
         );
         if (!$e) {
@@ -142,9 +142,9 @@ class ReferralService
     public function stats(string $referrerId): array
     {
         $bytes = Uuid::fromHexToBytes($referrerId);
-        $count = (int) $this->db->fetchOne('SELECT COUNT(*) FROM maxxpet_bonus_referral WHERE referrer_id = :r', ['r' => $bytes]);
+        $count = (int) $this->db->fetchOne('SELECT COUNT(*) FROM bonus_points_referral WHERE referrer_id = :r', ['r' => $bytes]);
         $points = (int) $this->db->fetchOne(
-            'SELECT COALESCE(SUM(points), 0) FROM maxxpet_bonus_entry WHERE customer_id = :r AND type IN (\'referral\', \'referral_reversal\')',
+            'SELECT COALESCE(SUM(points), 0) FROM bonus_points_entry WHERE customer_id = :r AND type IN (\'referral\', \'referral_reversal\')',
             ['r' => $bytes]
         );
 

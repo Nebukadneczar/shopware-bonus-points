@@ -1,10 +1,10 @@
 <?php declare(strict_types=1);
 
-namespace MaxxpetBonus\Controller;
+namespace BonusPoints\Controller;
 
-use MaxxpetBonus\Service\AdminService;
-use MaxxpetBonus\Service\BonusService;
-use MaxxpetBonus\Service\MemberService;
+use BonusPoints\Service\AdminService;
+use BonusPoints\Service\BonusService;
+use BonusPoints\Service\MemberService;
 use Shopware\Core\Framework\Uuid\Uuid;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -25,7 +25,7 @@ class AdminApiController extends AbstractController
     ) {
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/overview', name: 'api.action.maxxpet-bonus.overview', defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
+    #[Route(path: '/api/_action/bonus-points/overview', name: 'api.action.bonus-points.overview', defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
     public function overview(Request $request): JsonResponse
     {
         return new JsonResponse([
@@ -41,7 +41,7 @@ class AdminApiController extends AbstractController
         ]);
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/export', name: 'api.action.maxxpet-bonus.export', defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
+    #[Route(path: '/api/_action/bonus-points/export', name: 'api.action.bonus-points.export', defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
     public function export(): Response
     {
         return new Response($this->admin->exportCsv(), 200, [
@@ -50,7 +50,7 @@ class AdminApiController extends AbstractController
         ]);
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/customer/{id}', name: 'api.action.maxxpet-bonus.customer', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
+    #[Route(path: '/api/_action/bonus-points/customer/{id}', name: 'api.action.bonus-points.customer', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:read']], methods: ['GET'])]
     public function customer(string $id): Response
     {
         $c = $this->admin->customer($id);
@@ -58,7 +58,7 @@ class AdminApiController extends AbstractController
         return $c === null ? new JsonResponse(['error' => 'Kunde nicht gefunden'], 404) : new JsonResponse($c);
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/customer/{id}/book', name: 'api.action.maxxpet-bonus.book', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
+    #[Route(path: '/api/_action/bonus-points/customer/{id}/book', name: 'api.action.bonus-points.book', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
     public function book(string $id, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -72,7 +72,7 @@ class AdminApiController extends AbstractController
         return new JsonResponse(['ok' => true]);
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/customer/{id}/block', name: 'api.action.maxxpet-bonus.block', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
+    #[Route(path: '/api/_action/bonus-points/customer/{id}/block', name: 'api.action.bonus-points.block', requirements: ['id' => '[0-9a-f]{32}'], defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
     public function block(string $id, Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
@@ -85,7 +85,7 @@ class AdminApiController extends AbstractController
         return new JsonResponse(['ok' => true]);
     }
 
-    #[Route(path: '/api/_action/maxxpet-bonus/import', name: 'api.action.maxxpet-bonus.import', defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
+    #[Route(path: '/api/_action/bonus-points/import', name: 'api.action.bonus-points.import', defaults: ['_acl' => ['customer:update']], methods: ['POST'])]
     public function import(Request $request): JsonResponse
     {
         $data = json_decode($request->getContent(), true);
