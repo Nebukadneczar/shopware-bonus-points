@@ -1,0 +1,10 @@
+{% sw_extends '@Storefront/storefront/component/checkout/offcanvas-cart.html.twig' %}
+
+{% block component_offcanvas_summary %}
+    {{ parent() }}
+
+    {% set mxb = page.getExtension('maxxpetBonus') %}
+    {% if mxb %}
+        {% sw_include '@MaxxpetBonus/storefront/component/maxxpet-bonus/box.html.twig' with { mxbMode: 'offcanvas', mxbRedirect: 'frontend.checkout.cart.page' } %}
+    {% endif %}
+{% endblock %}

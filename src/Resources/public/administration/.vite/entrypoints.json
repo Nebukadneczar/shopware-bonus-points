@@ -1,0 +1,18 @@
+{
+  "base": "/",
+  "entryPoints": {
+    "maxxpet-bonus": {
+      "css": [],
+      "dev": false,
+      "js": [
+        "/bundles/maxxpetbonus/administration/assets/maxxpet-bonus.js?v=1.8.0"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": [],
+  "version": ["7.0.0", "1.0.0"],
+  "viteServer": null
+}

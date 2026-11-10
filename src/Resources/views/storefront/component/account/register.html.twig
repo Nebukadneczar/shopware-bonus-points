@@ -1,0 +1,23 @@
+{% sw_extends '@Storefront/storefront/component/account/register.html.twig' %}
+
+{% block component_account_register_address %}
+    {{ parent() }}
+
+    {% if config('MaxxpetBonus.config.active') %}
+        <div class="mxbr mt-3">
+            {% if config('MaxxpetBonus.config.enrollment') == 'optin' %}
+                <div class="form-check mb-2">
+                    <input type="checkbox" class="form-check-input" id="mxbr-join" name="maxxpetBonusJoin" value="1">
+                    <label class="form-check-label" for="mxbr-join">Ich möchte am Bonusprogramm teilnehmen und bei jeder Bestellung Punkte sammeln.</label>
+                </div>
+            {% endif %}
+            {% if config('MaxxpetBonus.config.referralEnabled') %}
+                <div class="form-group">
+                    <label class="form-label" for="mxbr-ref">Empfehlungscode (optional)</label>
+                    <input type="text" class="form-control" id="mxbr-ref" name="maxxpetBonusRef" maxlength="16" autocomplete="off">
+                    <small class="form-text text-muted">Bist du über einen Empfehlungslink gekommen, musst du hier nichts eintragen.</small>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+{% endblock %}

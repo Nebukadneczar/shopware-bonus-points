@@ -1,0 +1,164 @@
+{% sw_extends '@Storefront/storefront/page/account/_page.html.twig' %}
+
+{% set activeRoute = 'frontend.account.maxxpet.bonus.page' %}
+
+{% block page_account_main_content %}
+    <div class="mxb">
+        <h1 class="mxb__h1">Meine Punkte</h1>
+
+        {% if notEligible %}
+            <div class="mxb__card">
+                <p class="mxb__lvltext">Für dein Konto steht das Bonusprogramm leider nicht zur Verfügung. Bei Fragen melde dich gern bei uns.</p>
+            </div>
+        {% elseif canJoin %}
+            <div class="mxb__card">
+                <p class="mxb__lvltext"><strong>Sammle Punkte bei jeder Bestellung.</strong> Mit einem Klick bist du dabei. Du erhältst {{ pointsPerEuro|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} {{ pointsPerEuro == 1 ? 'Punkt' : 'Punkte' }} je 1 € Warenwert, jeder Punkt ist {{ (pointValue * 100)|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Cent wert.</p>
+                <form action="{{ path('frontend.maxxpet.bonus.join') }}" method="post">
+                    <input type="hidden" name="redirectTo" value="frontend.account.maxxpet.bonus.page">
+                    <button type="submit" class="btn btn-primary">Am Bonusprogramm teilnehmen</button>
+                </form>
+            </div>
+        {% elseif participant %}
+            <div class="mxb__hero">
+                <div class="mxb__cell">
+                    <span class="mxb__label">Verfügbare Punkte</span>
+                    <span class="mxb__big">{{ bonus.available|number_format(0, ',', '.') }}</span>
+                    <span class="mxb__hint">{{ (bonus.available > 0 ? bonus.available * pointValue : 0)|number_format(2, ',', '.') }} € Guthaben</span>
+                </div>
+                {% if lockDays > 0 or bonus.pending != 0 %}
+                    <div class="mxb__cell">
+                        <span class="mxb__label">Ausstehend</span>
+                        <span class="mxb__big mxb__big--soft">{{ bonus.pending|number_format(0, ',', '.') }}</span>
+                        <span class="mxb__hint">werden nach {{ lockDays }} Tagen verfügbar</span>
+                    </div>
+                {% endif %}
+                {% if bonus.levelsOn %}
+                    <div class="mxb__cell">
+                        <span class="mxb__label">Dein Level</span>
+                        <span class="mxb__badge">{{ bonus.level.name }}</span>
+                        {% if bonus.level.mult > 1 %}
+                            <span class="mxb__hint">×{{ bonus.level.mult|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Punkte je Euro</span>
+                        {% endif %}
+                        {% if bonus.level.discount > 0 %}
+                            <span class="mxb__hint">{{ bonus.level.discount|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} % Treuerabatt</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {% if bonus.levelsOn %}
+                <div class="mxb__card">
+                    {% if bonus.next %}
+                        <p class="mxb__lvltext">Noch <strong>{{ bonus.missing|number_format(0, ',', '.') }}</strong> Punkte bis zum Level <strong>{{ bonus.next.name }}</strong>
+                            {% if bonus.next.mult > bonus.level.mult %}(×{{ bonus.next.mult|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Punkte je Euro){% endif %}.</p>
+                    {% else %}
+                        <p class="mxb__lvltext">Du hast das höchste Level erreicht. Danke für deine Treue!</p>
+                    {% endif %}
+                    <div class="mxb__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ bonus.progress }}" aria-label="Fortschritt zum nächsten Level">
+                        <span style="width: {{ bonus.progress }}%"></span>
+                    </div>
+                    <ul class="mxb__levels">
+                        {% for l in levels %}
+                            <li{% if l.name == bonus.level.name %} class="is-current"{% endif %}>
+                                <strong>{{ l.name }}</strong> ab {{ l.min|number_format(0, ',', '.') }} Punkten
+                                {% if l.mult > 1 %}· ×{{ l.mult|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Punkte{% endif %}
+                                {% if l.discount > 0 %}· {{ l.discount|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} % Rabatt{% endif %}
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {% if referral.enabled %}
+                <h2 class="mxb__h2">Freunde einladen</h2>
+                <div class="mxb__card">
+                    <p class="mxb__lvltext">Lade Freunde ein und erhalte für <strong>jede ihrer Bestellungen</strong> dauerhaft {{ referral.perEuro|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') }} {{ referral.perEuro == 1 ? 'Punkt' : 'Punkte' }} je 1 € Warenwert.
+                        {% if referral.welcome > 0 %}Dein Freund bekommt zum Start {{ referral.welcome|number_format(0, ',', '.') }} Punkte.{% endif %}</p>
+                    <p class="mxb__lvltext">Dein Code: <strong class="mxb__code">{{ referral.code }}</strong></p>
+                    <div class="mxb__linkrow">
+                        <input type="text" class="form-control" readonly value="{{ referral.link }}" id="mxb-reflink" aria-label="Dein Empfehlungslink">
+                        <button type="button" class="btn btn-outline-primary" id="mxb-copy">Kopieren</button>
+                    </div>
+                    <p class="mxb__hint">Bisher geworben: <strong>{{ referral.count }}</strong>{% if referral.count > 0 %} · Punkte aus Empfehlungen: <strong>{{ referral.points|number_format(0, ',', '.') }}</strong>{% endif %}</p>
+                </div>
+            {% endif %}
+
+            <h2 class="mxb__h2">Buchungen</h2>
+            {% if entries|length %}
+                <div class="table-responsive">
+                    <table class="mxb__table">
+                        <thead>
+                            <tr><th>Datum</th><th>Vorgang</th><th class="mxb__r">Punkte</th><th>Status</th></tr>
+                        </thead>
+                        <tbody>
+                            {% for e in entries %}
+                                <tr>
+                                    <td>{{ e.createdAt|date('d.m.Y', 'Europe/Berlin') }}</td>
+                                    <td>{{ e.reason ?: e.label }}</td>
+                                    <td class="mxb__r {{ e.points < 0 ? 'is-minus' : 'is-plus' }}">{{ e.points > 0 ? '+' : '' }}{{ e.points|number_format(0, ',', '.') }}</td>
+                                    <td>{% if e.pending %}verfügbar ab {{ e.availableAt|date('d.m.Y', 'Europe/Berlin') }}{% else %}verfügbar{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <p class="mxb__empty">Noch keine Punkte. Mit deiner nächsten Bestellung geht es los.</p>
+            {% endif %}
+
+            <h2 class="mxb__h2">So funktioniert es</h2>
+            <ul class="mxb__rules">
+                <li>Für jede Bestellung erhältst du <strong>{% set ppe = pointsPerEuro|number_format(2, ',', '.')|trim('0', 'right')|trim(',', 'right') %}{{ ppe }} {{ ppe == '1' ? 'Punkt' : 'Punkte' }} je 1 € Warenwert</strong> (ohne Versandkosten){% if bonus.levelsOn %}, abhängig von deinem Level auch mehr{% endif %}.</li>
+                <li>Jeder Punkt ist <strong>{{ (pointValue * 100)|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} Cent</strong> wert. Das sind etwa <strong>{{ (pointsPerEuro * pointValue * 100)|number_format(1, ',', '.')|trim('0', 'right')|trim(',', 'right') }} %</strong> Rückvergütung auf deinen Einkauf{% if bonus.levelsOn %}, im höheren Level mehr{% endif %}.</li>
+                <li>Einlösen kannst du ab {{ minRedeem|number_format(0, ',', '.') }} Punkten im Warenkorb und an der Kasse. Du entscheidest selbst, wie viele Punkte du einsetzt.</li>
+                <li>Die Punkte erscheinen, sobald deine Bestellung bezahlt ist{% if lockDays > 0 %} und stehen nach {{ lockDays }} Tagen zur Verfügung (Widerrufsfrist){% else %} und stehen dir sofort zur Verfügung{% endif %}.</li>
+                {% if bonus.levelsOn %}<li>Dein Level richtet sich nach allen Punkten, die du verdient hast. Eingelöste Punkte nehmen dir dein Level nicht weg.</li>{% endif %}
+                <li>Wird eine Bestellung storniert oder erstattet, werden die Punkte dafür wieder abgezogen, eingelöste Punkte bekommst du zurück.</li>
+                {% for a in actions %}<li>Zusätzlich: <strong>{{ a.points|number_format(0, ',', '.') }} Punkte</strong> für {{ a.label }}.</li>{% endfor %}
+                <li>Punkte gibt es nur mit Kundenkonto, nicht bei Gastbestellungen.</li>
+            </ul>
+        {% endif %}
+    </div>
+
+    <style>
+        .mxb{--mxb-blau:#0649a8;--mxb-blau-d:#043477;--mxb-gruen:#27832a;--mxb-text:#173b59}
+        .mxb__h1{font-size:1.8rem;font-weight:800;color:var(--mxb-blau-d);margin:0 0 18px}
+        .mxb__h2{font-size:1.25rem;font-weight:800;color:var(--mxb-blau-d);margin:28px 0 12px}
+        .mxb__hero{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+        .mxb__cell{background:#fff;border:1px solid #d9e2ee;border-top:4px solid var(--mxb-gruen);border-radius:14px;padding:16px 18px;display:flex;flex-direction:column;gap:2px}
+        .mxb__label{font-size:.85rem;font-weight:700;color:#4a6178;text-transform:uppercase;letter-spacing:.04em}
+        .mxb__big{font-size:2.3rem;font-weight:800;line-height:1.1;color:var(--mxb-blau-d)}
+        .mxb__big--soft{color:#4a6178}
+        .mxb__hint{font-size:.85rem;color:#4a6178}
+        .mxb__badge{display:inline-block;align-self:flex-start;background:#eaf6ea;color:#1b6b1f;font-weight:800;font-size:1.4rem;padding:2px 14px;border-radius:999px;margin:4px 0}
+        .mxb__card{background:#f4f8fd;border-radius:14px;padding:16px 18px;margin-bottom:12px}
+        .mxb__lvltext{margin:0 0 10px;color:var(--mxb-text)}
+        .mxb__bar{height:12px;background:#dbe6f3;border-radius:999px;overflow:hidden}
+        .mxb__bar span{display:block;height:100%;background:var(--mxb-gruen);border-radius:999px}
+        .mxb__levels{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:8px 18px;font-size:.92rem;color:var(--mxb-text)}
+        .mxb__levels li.is-current{font-weight:700;color:var(--mxb-blau-d)}
+        .mxb__code{font-size:1.3rem;letter-spacing:.12em;color:var(--mxb-blau-d)}
+        .mxb__linkrow{display:flex;gap:8px;margin-bottom:8px}
+        .mxb__table{width:100%;border-collapse:collapse;font-size:.95rem}
+        .mxb__table th{text-align:left;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em;color:#4a6178;padding:8px 10px;border-bottom:2px solid #d9e2ee}
+        .mxb__table td{padding:10px;border-bottom:1px solid #e6edf6;color:var(--mxb-text)}
+        .mxb__r{text-align:right!important;white-space:nowrap}
+        .mxb__table .is-plus{color:#1f7a22;font-weight:800}
+        .mxb__table .is-minus{color:#b3261e;font-weight:800}
+        .mxb__empty{color:#4a6178}
+        .mxb__rules{padding-left:20px;color:var(--mxb-text)}
+        .mxb__rules li{margin:6px 0}
+        @media (max-width:767px){.mxb__h1{font-size:1.5rem}.mxb__big{font-size:2rem}}
+    </style>
+    <script>
+        (function () {
+            var b = document.getElementById('mxb-copy'), i = document.getElementById('mxb-reflink');
+            if (!b || !i) return;
+            b.addEventListener('click', function () {
+                i.select();
+                try { navigator.clipboard.writeText(i.value); } catch (e) { document.execCommand('copy'); }
+                b.textContent = 'Kopiert';
+            });
+        })();
+    </script>
+{% endblock %}

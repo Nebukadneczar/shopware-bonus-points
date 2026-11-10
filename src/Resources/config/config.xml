@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/trunk/src/Core/System/SystemConfig/Schema/config.xsd">
+    <card>
+        <title>General</title>
+        <title lang="de-DE">Allgemein</title>
+        <input-field type="bool">
+            <name>active</name>
+            <label>Active</label>
+            <label lang="de-DE">Bonus-System aktiv</label>
+            <helpText lang="de-DE">Aus: keine neuen Punkte, kein Einlösen, die Seite „Meine Punkte“ ist nicht erreichbar. Bestehende Buchungen bleiben erhalten.</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+        <input-field type="single-select">
+            <name>enrollment</name>
+            <label>Enrollment</label>
+            <label lang="de-DE">Teilnahme</label>
+            <helpText lang="de-DE">„Automatisch“: Jeder Kunde mit Konto nimmt teil. „Per Beitritt“: Der Kunde tritt selbst bei (Checkbox bei Registrierung und Kasse oder Knopf unter „Meine Punkte“). Punkte gibt es erst ab dem Beitritt.</helpText>
+            <options>
+                <option><id>auto</id><name>Automatic</name><name lang="de-DE">Automatisch (alle Kunden mit Konto)</name></option>
+                <option><id>optin</id><name>Opt-in</name><name lang="de-DE">Per Beitritt (Kunde meldet sich an)</name></option>
+            </options>
+            <defaultValue>auto</defaultValue>
+        </input-field>
+        <component name="sw-entity-multi-id-select">
+            <name>customerGroupIds</name>
+            <entity>customer_group</entity>
+            <label>Participating customer groups</label>
+            <label lang="de-DE">Teilnehmende Kundengruppen</label>
+            <helpText lang="de-DE">Leer lassen = alle Kundengruppen. Sonst nehmen nur Kunden dieser Gruppen teil (z. B. Privatkunden ohne Händler).</helpText>
+        </component>
+    </card>
+    <card>
+        <title>Points</title>
+        <title lang="de-DE">Punkte</title>
+        <input-field type="float">
+            <name>pointsPerEuro</name>
+            <label>Points per euro</label>
+            <label lang="de-DE">Punkte je 1 € Warenwert</label>
+            <helpText lang="de-DE">Basis ist der Bestellwert ohne Versandkosten und nach Rabatten. Der Level-Multiplikator wird darauf angewendet. Es wird abgerundet.</helpText>
+            <defaultValue>1</defaultValue>
+        </input-field>
+        <input-field type="float">
+            <name>pointValue</name>
+            <label>Value of one point (EUR)</label>
+            <label lang="de-DE">Wert eines Punktes in Euro</label>
+            <helpText lang="de-DE">0.03 = 100 Punkte sind 3 € wert. Bei 1 Punkt je Euro Einkauf sind das 3 % Rückvergütung.</helpText>
+            <defaultValue>0.03</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>lockDays</name>
+            <label>Lock period (days)</label>
+            <label lang="de-DE">Sperrfrist in Tagen</label>
+            <helpText lang="de-DE">0 = Punkte stehen sofort nach „Bezahlt“ zur Verfügung. Mit z. B. 14 stehen sie erst nach der Widerrufsfrist bereit, dann muss bei Rücksendungen nichts zurückgeholt werden.</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Redeeming</title>
+        <title lang="de-DE">Einlösen</title>
+        <input-field type="int">
+            <name>minRedeem</name>
+            <label>Minimum points to redeem</label>
+            <label lang="de-DE">Mindestmenge zum Einlösen (Punkte)</label>
+            <helpText lang="de-DE">Erst ab dieser Punktzahl kann der Kunde Punkte einlösen.</helpText>
+            <defaultValue>100</defaultValue>
+        </input-field>
+        <input-field type="float">
+            <name>minOrderValue</name>
+            <label>Minimum order value (EUR)</label>
+            <label lang="de-DE">Mindest-Warenwert zum Einlösen (€)</label>
+            <helpText lang="de-DE">0 = keiner. Unter diesem Warenwert ist das Einlösen nicht möglich, der Kunde sieht, wie viel noch fehlt (Anreiz für einen größeren Warenkorb).</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>maxRedeemPercent</name>
+            <label>Maximum share of cart (%)</label>
+            <label lang="de-DE">Höchstanteil am Warenwert (%)</label>
+            <helpText lang="de-DE">0 = keine Obergrenze. Z. B. 30 = höchstens 30 % des Warenwerts dürfen mit Punkten bezahlt werden. Der Warenkorb wird nie negativ.</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+        <input-field type="bool">
+            <name>combineWithLevelDiscount</name>
+            <label>Combine with level discount</label>
+            <label lang="de-DE">Treuerabatt und Punkte-Einlösung kombinieren</label>
+            <helpText lang="de-DE">Aus: Löst der Kunde Punkte ein, entfällt der Treuerabatt der Stufe (er entscheidet sich für eines von beiden).</helpText>
+            <defaultValue>true</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Levels</title>
+        <title lang="de-DE">Stufen</title>
+        <input-field type="single-select">
+            <name>levelModel</name>
+            <label>Level model</label>
+            <label lang="de-DE">Stufen-Modell</label>
+            <helpText lang="de-DE">„Lebenslang“ zählt alle jemals verdienten Punkte. „Rollierend“ nur die der letzten 12 Monate (Level kann wieder sinken). „Aus“ = reines Punkteprogramm ohne Stufen.</helpText>
+            <options>
+                <option><id>lifetime</id><name>Lifetime</name><name lang="de-DE">Lebenslang (alle verdienten Punkte)</name></option>
+                <option><id>rolling12</id><name>Rolling 12 months</name><name lang="de-DE">Rollierend (letzte 12 Monate)</name></option>
+                <option><id>off</id><name>Off</name><name lang="de-DE">Aus (keine Stufen)</name></option>
+            </options>
+            <defaultValue>lifetime</defaultValue>
+        </input-field>
+        <input-field type="textarea">
+            <name>levelsText</name>
+            <label>Levels</label>
+            <label lang="de-DE">Stufen (eine pro Zeile)</label>
+            <helpText lang="de-DE">Format je Zeile: Name;ab Statuspunkten;Punkte-Faktor;Treuerabatt in %. Beispiel: Silber;500;1.15;2 = ab 500 Punkten 15 % mehr Punkte und 2 % Rabatt. Beliebig viele Zeilen, Zeilen mit # am Anfang werden ignoriert.</helpText>
+            <defaultValue>Bronze;0;1;0
+Silber;500;1.15;0
+Gold;2000;1.3;0</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Actions</title>
+        <title lang="de-DE">Weitere Aktionen</title>
+        <input-field type="int">
+            <name>pointsRegistration</name>
+            <label>Points for registration</label>
+            <label lang="de-DE">Punkte für die Registrierung</label>
+            <helpText lang="de-DE">0 = aus. Einmal je Kunde.</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>pointsNewsletter</name>
+            <label>Points for newsletter</label>
+            <label lang="de-DE">Punkte für die Newsletter-Anmeldung</label>
+            <helpText lang="de-DE">0 = aus. Einmal je Kunde, nach Bestätigung der Anmeldung (Kunde mit Konto und derselben E-Mail-Adresse).</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>pointsReview</name>
+            <label>Points per review</label>
+            <label lang="de-DE">Punkte je Produktbewertung</label>
+            <helpText lang="de-DE">0 = aus. Je Kunde und Produkt einmal, sobald die Bewertung freigegeben ist.</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>pointsBirthday</name>
+            <label>Points for birthday</label>
+            <label lang="de-DE">Punkte zum Geburtstag</label>
+            <helpText lang="de-DE">0 = aus. Einmal im Jahr, wenn sich der Kunde an seinem Geburtstag anmeldet (Geburtsdatum im Kundenkonto nötig).</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Referral program</title>
+        <title lang="de-DE">Empfehlungssystem</title>
+        <input-field type="bool">
+            <name>referralEnabled</name>
+            <label>Enable referral program</label>
+            <label lang="de-DE">Empfehlungssystem aktiv</label>
+            <helpText lang="de-DE">Jeder Teilnehmer bekommt Code und Link. Der Werbende erhält dauerhaft Punkte auf alle Bestellungen des Geworbenen.</helpText>
+            <defaultValue>false</defaultValue>
+        </input-field>
+        <input-field type="float">
+            <name>referralPointsPerEuro</name>
+            <label>Commission (points per euro)</label>
+            <label lang="de-DE">Provision: Punkte je 1 € Warenwert</label>
+            <helpText lang="de-DE">Gilt für jede bezahlte Bestellung des geworbenen Kunden (lebenslang). 0.5 = halb so viel wie der Kunde selbst bekommt.</helpText>
+            <defaultValue>0.5</defaultValue>
+        </input-field>
+        <input-field type="int">
+            <name>referralWelcome</name>
+            <label>Welcome points for referred customer</label>
+            <label lang="de-DE">Willkommenspunkte für den Geworbenen</label>
+            <helpText lang="de-DE">0 = aus. Wird bei der Registrierung mit Empfehlungscode gutgeschrieben.</helpText>
+            <defaultValue>0</defaultValue>
+        </input-field>
+    </card>
+    <card>
+        <title>Free gifts</title>
+        <title lang="de-DE">Gratisprodukte</title>
+        <input-field type="textarea">
+            <name>giftRules</name>
+            <label>Gift rules</label>
+            <label lang="de-DE">Regeln (eine pro Zeile)</label>
+            <helpText lang="de-DE">Format: Artikelnummer;Bezeichnung;Mindestwarenwert in €;Mindestlevel (optional, Name aus den Stufen);auto oder wahl. Beispiel: ART-1001;Beispiel-Geschenk;50;;auto = ab 50 € automatisch. Beispiel: ART-1002;Beispiel-Set;80;Silber;wahl = ab 80 € und Level Silber zur Auswahl. Das Geschenk erscheint als Position mit 0 €. Es wird kein Lagerbestand abgebucht, die Bestellung zeigt Artikelnummer und Bezeichnung zum Verpacken.</helpText>
+            <defaultValue></defaultValue>
+        </input-field>
+    </card>
+</config>

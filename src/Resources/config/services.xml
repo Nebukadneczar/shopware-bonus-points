@@ -1,0 +1,144 @@
+<?xml version="1.0" ?>
+<container xmlns="http://symfony.com/schema/dic/services"
+           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+           xsi:schemaLocation="http://symfony.com/schema/dic/services http://symfony.com/schema/dic/services/services-1.0.xsd">
+    <services>
+        <!-- Dienste -->
+        <service id="MaxxpetBonus\Service\MemberService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+        </service>
+
+        <service id="MaxxpetBonus\Service\BonusService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+        </service>
+
+        <service id="MaxxpetBonus\Service\ReferralService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+        </service>
+
+        <service id="MaxxpetBonus\Service\GiftService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="Shopware\Core\System\SystemConfig\SystemConfigService"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+        </service>
+
+        <service id="MaxxpetBonus\Service\AdminService">
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\ReferralService"/>
+        </service>
+
+        <!-- Warenkorb -->
+        <service id="MaxxpetBonus\Cart\LevelDiscountCartProcessor">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\PercentagePriceCalculator"/>
+            <tag name="shopware.cart.processor" priority="3100"/>
+        </service>
+
+        <service id="MaxxpetBonus\Cart\BonusCartProcessor">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="Shopware\Core\Checkout\Cart\Price\AbsolutePriceCalculator"/>
+            <tag name="shopware.cart.processor" priority="3000"/>
+        </service>
+
+        <service id="MaxxpetBonus\Cart\GiftCartProcessor">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\GiftService"/>
+            <tag name="shopware.cart.processor" priority="2500"/>
+        </service>
+
+        <!-- Ereignisse -->
+        <service id="MaxxpetBonus\Subscriber\OrderSubscriber">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\ReferralService"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="logger"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="MaxxpetBonus\Subscriber\CustomerSubscriber">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\ReferralService"/>
+            <argument type="service" id="Doctrine\DBAL\Connection"/>
+            <argument type="service" id="request_stack"/>
+            <argument type="service" id="logger"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <service id="MaxxpetBonus\Subscriber\CartPageSubscriber">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\GiftService"/>
+            <argument type="service" id="logger"/>
+            <tag name="kernel.event_subscriber"/>
+        </service>
+
+        <!-- Storefront -->
+        <service id="MaxxpetBonus\Storefront\Controller\BonusController" public="true">
+            <argument type="service" id="Shopware\Storefront\Page\GenericPageLoader"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <argument type="service" id="MaxxpetBonus\Service\ReferralService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <service id="MaxxpetBonus\Storefront\Controller\RedeemController" public="true">
+            <argument type="service" id="Shopware\Core\Checkout\Cart\SalesChannel\CartService"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <!-- Admin-Schnittstelle -->
+        <service id="MaxxpetBonus\Controller\AdminApiController" public="true">
+            <argument type="service" id="MaxxpetBonus\Service\AdminService"/>
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <call method="setContainer">
+                <argument type="service" id="service_container"/>
+            </call>
+            <tag name="controller.service_arguments"/>
+        </service>
+
+        <!-- Befehle -->
+        <service id="MaxxpetBonus\Command\KontoCommand">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <tag name="console.command"/>
+        </service>
+
+        <service id="MaxxpetBonus\Command\BuchenCommand">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <tag name="console.command"/>
+        </service>
+
+        <service id="MaxxpetBonus\Command\AbgleichCommand">
+            <argument type="service" id="MaxxpetBonus\Service\AdminService"/>
+            <tag name="console.command"/>
+        </service>
+
+        <service id="MaxxpetBonus\Command\SperreCommand">
+            <argument type="service" id="MaxxpetBonus\Service\BonusService"/>
+            <argument type="service" id="MaxxpetBonus\Service\MemberService"/>
+            <tag name="console.command"/>
+        </service>
+    </services>
+</container>

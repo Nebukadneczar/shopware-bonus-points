@@ -1,0 +1,10 @@
+{% sw_extends '@Storefront/storefront/page/checkout/confirm/index.html.twig' %}
+
+{% block page_checkout_aside_actions %}
+    {% set mxb = page.getExtension('maxxpetBonus') %}
+    {% if mxb %}
+        {% sw_include '@MaxxpetBonus/storefront/component/maxxpet-bonus/box.html.twig' with { mxbMode: 'confirm', mxbRedirect: 'frontend.checkout.confirm.page' } %}
+    {% endif %}
+
+    {{ parent() }}
+{% endblock %}
