@@ -153,7 +153,7 @@ var ABOUT_TPL = `
     <div class="bpa-credits">
       <div><span>Ideengeber und Hersteller</span><strong>Markus Czarnetzki, Oberhausen, NRW</strong></div>
       <div><span>Webseite</span><strong><a href="https://macdata.de" target="_blank" rel="noopener noreferrer">macdata.de</a></strong></div>
-      <div><span>Programmierung</span><strong>Markus Czarnetzki &amp; Claude, KI-Assistent von Anthropic, im Auftrag von MAXXPET</strong></div>
+      <div><span>Programmierung</span><strong>Markus Czarnetzki</strong></div>
       <div><span>Gebaut für</span><strong>Shopware 6.7</strong></div>
     </div>
     <p class="bpa-copy">© 1999 macdata.de · Plugin © 2026 Markus Czarnetzki</p>

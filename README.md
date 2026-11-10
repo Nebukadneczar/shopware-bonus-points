@@ -50,4 +50,4 @@ Install the ZIP via Extensions → My extensions → Upload, activate it, then r
 ---
 Ideengeber und Hersteller: Markus Czarnetzki, Oberhausen, NRW · [macdata.de](https://macdata.de)
 © 1999 macdata.de · Plugin © 2026 Markus Czarnetzki · MIT License
-Programmierung: Markus Czarnetzki & Claude, KI-Assistent von Anthropic, im Auftrag von MAXXPET
+Programmierung: Markus Czarnetzki
